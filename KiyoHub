@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro 5s, Clean Aimbot, Sub-Menu Animations, Close 'X' Buttons, Audio Separation)
+-- Roblox Delta Script - KIYO HUB (Aimbot Logic Cleaned, Sub-Menu Animations, Close 'X' Buttons, Audio Separation)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -32,7 +32,7 @@ local function PlayUISound(soundId, volume)
     end)
 end
 
--- ==================== INTRO LOADING SCREEN (5 GIÂY + NHẠC 4702564143 + ANIMATION) ====================
+-- ==================== INTRO LOADING SCREEN (4 GIÂY + NHẠC 4702564143 + ANIMATION) ====================
 local IntroGui = Instance.new("ScreenGui", ParentGui)
 IntroGui.Name = "KiyoHubIntroGui"
 IntroGui.ResetOnSpawn = false
@@ -107,9 +107,8 @@ task.spawn(function()
     local hueTitle = 0
     local hueBar = 0
     local progress = 0
-    -- Chạy trong vòng 5 giây (50 bước x 0.1s = 5 giây)
     while progress < 100 do
-        progress = progress + 2
+        progress = progress + 2.5
         if progress > 100 then progress = 100 end
         
         PercentLabel.Text = "Loading... " .. math.floor(progress) .. "%"
@@ -121,7 +120,7 @@ task.spawn(function()
         hueBar = (hueBar + 0.03) % 1
         LoadBarFill.BackgroundColor3 = Color3.fromHSV(hueBar, 0.9, 1)
         
-        task.wait(0.1)
+        task.wait(0.05)
     end
     
     ScreenGui.Enabled = true
@@ -2157,6 +2156,7 @@ local loopTimer = 0
 local espUpdateTimer = 0
 local antiTouchTimer = 0
 
+-- Hàm Aimbot đơn giản và chuẩn xác (Đã loại bỏ hoàn toàn logic MM2 Sheriff/Hero cũ)
 local function getClosestPlayerToHead()
     local closestPlayer = nil
     local shortestDistance = math.huge
@@ -2382,7 +2382,7 @@ table.insert(Connections, RunService.Stepped:Connect(function(delta)
                             for _, otherPlayer in pairs(Players:GetPlayers()) do
                                 if otherPlayer ~= LocalPlayer and otherPlayer.Character then
                                     local otherHrp = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                                    if hrp and otherHpr and (hrp.Position - otherHrp.Position).Magnitude < 40 then
+                                    if hrp and otherHrp and (hrp.Position - otherHrp.Position).Magnitude < 40 then
                                         for _, part in pairs(otherPlayer.Character:GetDescendants()) do if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end end
                                     end
                                 end
