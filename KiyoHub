@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Cyberpunk + Floating White Particles, Smooth Fade-Out, Zero Lag, Audio Separation)
+-- Roblox Delta Script - KIYO HUB (Intro Neon Pro + 2D Floating White Particles, Smooth Scale-Down, Zero Lag, Audio Separation)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -32,7 +32,7 @@ local function PlayUISound(soundId, volume)
     end)
 end
 
--- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + HẠT TRẮNG BAY + THU NHỎ BIẾN MẤT) ====================
+-- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + HẠT TRẮNG UI BAY BAY) ====================
 local IntroGui = Instance.new("ScreenGui", ParentGui)
 IntroGui.Name = "KiyoHubIntroGui"
 IntroGui.ResetOnSpawn = false
@@ -43,6 +43,46 @@ IntroSound.SoundId = "rbxassetid://4702564143"
 IntroSound.Volume = 2
 IntroSound.Parent = IntroGui
 pcall(function() IntroSound:Play() end)
+
+-- Container chứa các hạt trắng bay lơ lửng ngoài khung Intro
+local ParticleContainer = Instance.new("Folder", IntroGui)
+ParticleContainer.Name = "IntroParticles"
+
+local isIntroActive = true
+
+-- Tạo hiệu ứng hạt trắng bay chậm, mượt mà, tự hủy không gây lag
+task.spawn(function()
+    while isIntroActive do
+        task.wait(0.2)
+        if not isIntroActive then break end
+        pcall(function()
+            local particle = Instance.new("Frame", ParticleContainer)
+            local size = math.random(4, 8)
+            particle.Size = UDim2.new(0, size, 0, size)
+            
+            -- Random vị trí xuất hiện ở nửa màn hình xung quanh tâm
+            local startX = math.random(20, 80) / 100
+            particle.Position = UDim2.new(startX, math.random(-80, 80), 1.1, 0)
+            particle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            particle.BackgroundTransparency = math.random(30, 60) / 100
+            particle.BorderSizePixel = 0
+            
+            Instance.new("UICorner", particle).CornerRadius = UDim.new(1, 0)
+            
+            local targetY = math.random(-20, 20) / 100
+            local duration = math.random(25, 38) / 10
+            
+            TweenService:Create(particle, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+                Position = UDim2.new(startX, math.random(-120, 120), targetY, 0),
+                BackgroundTransparency = 1
+            }):Play()
+            
+            task.delay(duration, function()
+                pcall(function() particle:Destroy() end)
+            end)
+        end)
+    end
+end)
 
 local IntroFrame = Instance.new("Frame", IntroGui)
 IntroFrame.Size = UDim2.new(0, 0, 0, 0)
@@ -55,24 +95,6 @@ Instance.new("UICorner", IntroFrame).CornerRadius = UDim.new(0, 16)
 local IntroStroke = Instance.new("UIStroke", IntroFrame)
 IntroStroke.Color = Color3.fromRGB(0, 130, 255)
 IntroStroke.Thickness = 2
-
--- Hiệu ứng hạt trắng bay bên ngoài intro (Particle Emitter nhẹ nhàng, tối ưu không giật lag)
-local ParticleHolder = Instance.new("Part", IntroGui)
-ParticleHolder.Size = Vector3.new(1, 1, 1)
-ParticleHolder.Transparency = 1
-ParticleHolder.Anchored = true
-ParticleHolder.CanCollide = false
-ParticleHolder.Position = Vector3.new(0, 0, 0)
-
-local ParticleEmitter = Instance.new("ParticleEmitter", ParticleHolder)
-ParticleEmitter.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-ParticleEmitter.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.15), NumberSequenceKeypoint.new(1, 0.05)})
-ParticleEmitter.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1)})
-ParticleEmitter.Lifetime = NumberRange.new(1.5, 3.0)
-ParticleEmitter.Rate = 25
-ParticleEmitter.Speed = NumberRange.new(2, 5)
-ParticleEmitter.SpreadAngle = Vector2.new(180, 180)
-ParticleEmitter.Acceleration = Vector3.new(0, 2, 0)
 
 -- Logo Icon trong Intro
 local IntroLogo = Instance.new("ImageLabel", IntroFrame)
@@ -182,6 +204,8 @@ task.spawn(function()
         IntroSound:Destroy()
     end)
     
+    isIntroActive = false
+    
     -- Hiệu ứng thu nhỏ (Scale down) và biến mất trước khi xóa hoàn toàn
     TweenService:Create(IntroFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
         Size = UDim2.new(0, 0, 0, 0),
@@ -191,7 +215,6 @@ task.spawn(function()
     
     task.wait(0.25)
     IntroGui:Destroy()
-    ParticleHolder:Destroy()
 end)
 
 local function InitializeKiyoHub()
