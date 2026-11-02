@@ -2072,7 +2072,7 @@ ServerTab:CreateButton({
 
 -- Info Tab
 InfoTab:CreateSection("Creator Profile")
-InfoTab:CreateButton({ Name = "Display Name: C1rest", Callback = function() end })
+InfoTab:CreateButton({ Name = "Roblox Account: C1rest", Callback = function() end })
 InfoTab:CreateButton({ Name = "TikTok: @nguynkhanq", Callback = function() end })
 InfoTab:CreateButton({
     Name = "Discord: https://discord.gg/gfkNH3dxE (Click to copy)",
