@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Optimized & Cleaned Version)
+-- Roblox Delta Script - KIYO HUB (Custom Mobile UI - Bounce Animation & Pure Select Player)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -7,6 +7,7 @@ local Lighting = game:GetService("Lighting")
 local HttpService = game:GetService("HttpService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
@@ -37,6 +38,7 @@ local State = {
     FullBright = false,
     Spin = false,
     LoopPeople = false,
+    LoopPeopleActive = false,
     TeleportAll = false,
     FakeLag = false,
     FakeLagActive = false,
@@ -81,6 +83,16 @@ local r6JointsData = {}
 
 local noclipEnabled = false
 local noclipConnection = nil
+
+-- Hàm tạo hiệu ứng nảy (Bounce Elastic) cho nút bấm
+local function AddBounceEffect(button, originalSize)
+    button.MouseButton1Down:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset - 4, originalSize.Y.Scale, originalSize.Y.Offset - 4)}):Play()
+    end)
+    button.MouseButton1Up:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = originalSize}):Play()
+    end)
+end
 
 local function applyRagdoll(char, enable)
     pcall(function()
@@ -161,7 +173,7 @@ local function applyRagdoll(char, enable)
     end)
 end
 
--- LOGIC FART: KHÓI XANH, LAO VỀ PHÍA TRƯỚC + ÂM THANH ĐÁNH RẮM
+-- LOGIC FART
 local function executeFart()
     pcall(function()
         local char = LocalPlayer.Character
@@ -509,51 +521,471 @@ local function applyFixLag(enable)
     end)
 end
 
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
-
-local Window = WindUI:CreateWindow({
-    Title = "Kiyo Hub",
-    Icon = "rbxassetid://11778372908",
-    Author = "by Delta Optimized",
-    Folder = "KiyoHubConfig",
-    Size = UDim2.fromOffset(580, 460),
-    Theme = "Dark",
-    Transparent = true,
-    Acrylic = false,
-    Background ="rbxassetid://137277385674587" 
-})
-
-local MainTab = Window:Tab({ Title = "Main", Icon = "rbxassetid://4483362458" })
-local VisualTab = Window:Tab({ Title = "Visuals", Icon = "rbxassetid://4483362458" })
-local TeleportTab = Window:Tab({ Title = "Teleport & Misc", Icon = "rbxassetid://4483362458" })
-local SpectateTab = Window:Tab({ Title = "Spectate", Icon = "rbxassetid://4483362458" })
-local ServerTab = Window:Tab({ Title = "Server & Audio", Icon = "rbxassetid://4483362458" })
-local InfoTab = Window:Tab({ Title = "Author Info", Icon = "rbxassetid://4483362458" })
-
+-- ==================== SCREEN GUI VÀ HIỆU ỨNG BOUNCE NẢY ĐỈNH CAO ====================
 local ParentGui = (gethui and gethui()) or game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
-if ParentGui:FindFirstChild("KiyoHubSubGui") then ParentGui.KiyoHubSubGui:Destroy() end
+if ParentGui:FindFirstChild("KiyoHubCustomUI") then ParentGui.KiyoHubCustomUI:Destroy() end
+if ParentGui:FindFirstChild("KiyoHubDropdownGui") then ParentGui.KiyoHubDropdownGui:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui", ParentGui)
-ScreenGui.Name = "KiyoHubSubGui"
+ScreenGui.Name = "KiyoHubCustomUI"
 ScreenGui.ResetOnSpawn = false
 
+local DropdownGui = Instance.new("ScreenGui", ParentGui)
+DropdownGui.Name = "KiyoHubDropdownGui"
+DropdownGui.ResetOnSpawn = false
+DropdownGui.DisplayOrder = 9999
+
+-- Nút Logo Nổi (Có độ nảy mượt mà Elastic khi bấm)
+local FloatButton = Instance.new("ImageButton", ScreenGui)
+FloatButton.Name = "FloatButton"
+FloatButton.Size = UDim2.new(0, 42, 0, 42)
+FloatButton.Position = UDim2.new(0.05, 0, 0.15, 0)
+FloatButton.BackgroundColor3 = Color3.fromRGB(15, 18, 24)
+FloatButton.Image = "rbxassetid://11778372908"
+FloatButton.Active = true
+FloatButton.Draggable = true
+
+local FloatCorner = Instance.new("UICorner", FloatButton)
+FloatCorner.CornerRadius = UDim.new(1, 0)
+
+local FloatStroke = Instance.new("UIStroke", FloatButton)
+FloatStroke.Color = Color3.fromRGB(35, 42, 55)
+FloatStroke.Thickness = 1.5
+
+FloatButton.MouseButton1Down:Connect(function()
+    TweenService:Create(FloatButton, TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 36, 0, 36)}):Play()
+end)
+
+FloatButton.MouseButton1Up:Connect(function()
+    TweenService:Create(FloatButton, TweenInfo.new(0.25, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {Size = UDim2.new(0, 42, 0, 42)}):Play()
+end)
+
+-- Cửa sổ chính
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 430, 0, 260)
+MainFrame.Position = UDim2.new(0.5, -215, 0.5, -130)
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 15, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.ClipsDescendants = true
+
+local MainCorner = Instance.new("UICorner", MainFrame)
+MainCorner.CornerRadius = UDim.new(0, 10)
+
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = Color3.fromRGB(30, 36, 48)
+MainStroke.Thickness = 1.5
+
+-- Thanh tiêu đề
+local TopBar = Instance.new("Frame", MainFrame)
+TopBar.Size = UDim2.new(1, 0, 0, 36)
+TopBar.BackgroundColor3 = Color3.fromRGB(17, 21, 28)
+TopBar.BorderSizePixel = 0
+
+local TopCorner = Instance.new("UICorner", TopBar)
+TopCorner.CornerRadius = UDim.new(0, 10)
+
+local LogoImg = Instance.new("ImageLabel", TopBar)
+LogoImg.Size = UDim2.new(0, 22, 0, 22)
+LogoImg.Position = UDim2.new(0, 10, 0.5, -11)
+LogoImg.BackgroundTransparency = 1
+LogoImg.Image = "rbxassetid://11778372908"
+
+local TitleLabel = Instance.new("TextLabel", TopBar)
+TitleLabel.Size = UDim2.new(0, 250, 1, 0)
+TitleLabel.Position = UDim2.new(0, 40, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Kiyo Hub | Custom UI"
+TitleLabel.TextColor3 = Color3.fromRGB(230, 235, 245)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 13
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local CloseBtn = Instance.new("TextButton", TopBar)
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -30, 0.5, -13)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 11
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
+AddBounceEffect(CloseBtn, UDim2.new(0, 26, 0, 26))
+
+CloseBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(MainFrame, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}):Play()
+    task.delay(0.22, function()
+        MainFrame.Visible = false
+        MainFrame.Size = UDim2.new(0, 430, 0, 260)
+        MainFrame.BackgroundTransparency = 0
+    end)
+end)
+
+FloatButton.MouseButton1Click:Connect(function()
+    if not MainFrame.Visible then
+        MainFrame.Size = UDim2.new(0, 0, 0, 0)
+        MainFrame.Visible = true
+        TweenService:Create(MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 430, 0, 260)}):Play()
+    else
+        TweenService:Create(MainFrame, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+        task.delay(0.22, function()
+            MainFrame.Visible = false
+            MainFrame.Size = UDim2.new(0, 430, 0, 260)
+        end)
+    end
+end)
+
+-- Thanh Tabs bên trái
+local TabListFrame = Instance.new("ScrollingFrame", MainFrame)
+TabListFrame.Size = UDim2.new(0, 110, 1, -40)
+TabListFrame.Position = UDim2.new(0, 0, 0, 40)
+TabListFrame.BackgroundTransparency = 1
+TabListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+TabListFrame.ScrollBarThickness = 2
+
+local UIListLayoutTabs = Instance.new("UIListLayout", TabListFrame)
+UIListLayoutTabs.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayoutTabs.Padding = UDim.new(0, 4)
+
+-- Khu vực chứa nội dung các Tab bên phải
+local ContainerHolder = Instance.new("Frame", MainFrame)
+ContainerHolder.Size = UDim2.new(1, -115, 1, -42)
+ContainerHolder.Position = UDim2.new(0, 115, 0, 40)
+ContainerHolder.BackgroundTransparency = 1
+
+local Tabs = {}
+local activeTab = nil
+
+local function CreateTab(name)
+    local tabScroll = Instance.new("ScrollingFrame", ContainerHolder)
+    tabScroll.Size = UDim2.new(1, 0, 1, 0)
+    tabScroll.BackgroundTransparency = 1
+    tabScroll.Visible = false
+    tabScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    tabScroll.ScrollBarThickness = 3
+    
+    local listLayout = Instance.new("UIListLayout", tabScroll)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Padding = UDim.new(0, 5)
+    
+    listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        tabScroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
+    end)
+    
+    local tabBtn = Instance.new("TextButton", TabListFrame)
+    tabBtn.Size = UDim2.new(1, -8, 0, 28)
+    tabBtn.Position = UDim2.new(0, 4, 0, 0)
+    tabBtn.BackgroundColor3 = Color3.fromRGB(17, 21, 28)
+    tabBtn.Text = name
+    tabBtn.TextColor3 = Color3.fromRGB(150, 165, 190)
+    tabBtn.Font = Enum.Font.GothamMedium
+    tabBtn.TextSize = 11
+    Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
+    AddBounceEffect(tabBtn, UDim2.new(1, -8, 0, 28))
+    
+    tabBtn.MouseButton1Click:Connect(function()
+        for _, t in pairs(Tabs) do
+            t.Scroll.Visible = false
+            t.Button.BackgroundColor3 = Color3.fromRGB(17, 21, 28)
+            t.Button.TextColor3 = Color3.fromRGB(150, 165, 190)
+        end
+        tabScroll.Visible = true
+        tabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+    
+    if not activeTab then
+        tabScroll.Visible = true
+        tabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        activeTab = tabScroll
+    end
+    
+    table.insert(Tabs, {Scroll = tabScroll, Button = tabBtn})
+    
+    local api = {}
+    
+    function api:CreateToggle(data)
+        local frame = Instance.new("Frame", tabScroll)
+        frame.Size = UDim2.new(1, -8, 0, 30)
+        frame.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+        
+        local stroke = Instance.new("UIStroke", frame)
+        stroke.Color = Color3.fromRGB(30, 36, 48)
+        stroke.Thickness = 1
+        
+        local label = Instance.new("TextLabel", frame)
+        label.Size = UDim2.new(1, -45, 1, 0)
+        label.Position = UDim2.new(0, 8, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Text = data.Name
+        label.TextColor3 = Color3.fromRGB(210, 220, 235)
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 11
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local toggleBtn = Instance.new("TextButton", frame)
+        toggleBtn.Size = UDim2.new(0, 32, 0, 18)
+        toggleBtn.Position = UDim2.new(1, -38, 0.5, -9)
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(35, 42, 55)
+        toggleBtn.Text = ""
+        Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
+        AddBounceEffect(toggleBtn, UDim2.new(0, 32, 0, 18))
+        
+        local circle = Instance.new("Frame", toggleBtn)
+        circle.Size = UDim2.new(0, 14, 0, 14)
+        circle.Position = UDim2.new(0, 2, 0.5, -7)
+        circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
+        
+        local toggled = data.CurrentValue or false
+        local function updateToggle(val)
+            toggled = val
+            if toggled then
+                toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
+                circle:TweenPosition(UDim2.new(1, -16, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+            else
+                toggleBtn.BackgroundColor3 = Color3.fromRGB(35, 42, 55)
+                circle:TweenPosition(UDim2.new(0, 2, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+            end
+            if data.Callback then pcall(function() data.Callback(toggled) end) end
+        end
+        
+        if toggled then updateToggle(true) end
+        
+        toggleBtn.MouseButton1Click:Connect(function()
+            updateToggle(not toggled)
+        end)
+    end
+    
+    function api:CreateInput(data)
+        local frame = Instance.new("Frame", tabScroll)
+        frame.Size = UDim2.new(1, -8, 0, 30)
+        frame.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+        
+        local stroke = Instance.new("UIStroke", frame)
+        stroke.Color = Color3.fromRGB(30, 36, 48)
+        stroke.Thickness = 1
+        
+        local label = Instance.new("TextLabel", frame)
+        label.Size = UDim2.new(0.5, 0, 1, 0)
+        label.Position = UDim2.new(0, 8, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Text = data.Name
+        label.TextColor3 = Color3.fromRGB(210, 220, 235)
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 11
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local textBox = Instance.new("TextBox", frame)
+        textBox.Size = UDim2.new(0.42, 0, 0, 20)
+        textBox.Position = UDim2.new(0.55, 0, 0.5, -10)
+        textBox.BackgroundColor3 = Color3.fromRGB(24, 30, 40)
+        textBox.Text = data.CurrentValue or ""
+        textBox.PlaceholderText = data.PlaceholderText or ""
+        textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        textBox.Font = Enum.Font.Gotham
+        textBox.TextSize = 11
+        Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 4)
+        
+        textBox.FocusLost:Connect(function()
+            if data.Callback then pcall(function() data.Callback(textBox.Text) end) end
+        end)
+    end
+    
+    -- ==================== MENU SELECT PLAYER (LỌC BỎ TÊN BẢN THÂN + TIÊU ĐỀ SELECT PLAYER) ====================
+    function api:CreatePlayerDropdown(data)
+        local frame = Instance.new("Frame", tabScroll)
+        frame.Size = UDim2.new(1, -8, 0, 30)
+        frame.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+        
+        local stroke = Instance.new("UIStroke", frame)
+        stroke.Color = Color3.fromRGB(30, 36, 48)
+        stroke.Thickness = 1
+        
+        local label = Instance.new("TextLabel", frame)
+        label.Size = UDim2.new(0.4, 0, 1, 0)
+        label.Position = UDim2.new(0, 8, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Text = data.Name
+        label.TextColor3 = Color3.fromRGB(210, 220, 235)
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 11
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local dropdownBtn = Instance.new("TextButton", frame)
+        dropdownBtn.Size = UDim2.new(0.55, 0, 0, 20)
+        dropdownBtn.Position = UDim2.new(0.43, 0, 0.5, -10)
+        dropdownBtn.BackgroundColor3 = Color3.fromRGB(24, 30, 40)
+        dropdownBtn.Text = data.CurrentOption or "None"
+        dropdownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        dropdownBtn.Font = Enum.Font.Gotham
+        dropdownBtn.TextSize = 10
+        Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 4)
+        AddBounceEffect(dropdownBtn, UDim2.new(0.55, 0, 0, 20))
+
+        local PlayerMenu = Instance.new("Frame", DropdownGui)
+        PlayerMenu.Name = "PlayerMenu_" .. math.random(1000, 9999)
+        PlayerMenu.Size = UDim2.new(0, 200, 0, 180)
+        PlayerMenu.Position = UDim2.new(0.5, -100, 0.5, -90)
+        PlayerMenu.BackgroundColor3 = Color3.fromRGB(14, 18, 25)
+        PlayerMenu.Visible = false
+        PlayerMenu.Active = true
+        PlayerMenu.Draggable = true
+
+        Instance.new("UICorner", PlayerMenu).CornerRadius = UDim.new(0, 8)
+        local menuStroke = Instance.new("UIStroke", PlayerMenu)
+        menuStroke.Color = Color3.fromRGB(50, 60, 75)
+        menuStroke.Thickness = 1.5
+
+        local menuTitle = Instance.new("TextLabel", PlayerMenu)
+        menuTitle.Size = UDim2.new(1, 0, 0, 28)
+        menuTitle.BackgroundTransparency = 1
+        menuTitle.Text = "Select Player" -- Sửa tên tiêu đề theo yêu cầu
+        menuTitle.TextColor3 = Color3.fromRGB(210, 220, 235)
+        menuTitle.Font = Enum.Font.GothamBold
+        menuTitle.TextSize = 11
+
+        local scrollList = Instance.new("ScrollingFrame", PlayerMenu)
+        scrollList.Size = UDim2.new(1, -8, 1, -34)
+        scrollList.Position = UDim2.new(0, 4, 0, 30)
+        scrollList.BackgroundTransparency = 1
+        scrollList.CanvasSize = UDim2.new(0, 0, 0, 0)
+        scrollList.ScrollBarThickness = 4
+
+        local layoutList = Instance.new("UIListLayout", scrollList)
+        layoutList.SortOrder = Enum.SortOrder.LayoutOrder
+        layoutList.Padding = UDim.new(0, 4)
+
+        layoutList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            scrollList.CanvasSize = UDim2.new(0, 0, 0, layoutList.AbsoluteContentSize.Y + 8)
+        end)
+
+        local function populateList()
+            for _, c in pairs(scrollList:GetChildren()) do
+                if c:IsA("TextButton") then c:Destroy() end
+            end
+            
+            -- Option "None"
+            local noneBtn = Instance.new("TextButton", scrollList)
+            noneBtn.Size = UDim2.new(1, -4, 0, 26)
+            noneBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 33)
+            noneBtn.Text = "None"
+            noneBtn.TextColor3 = Color3.fromRGB(180, 190, 205)
+            noneBtn.Font = Enum.Font.GothamMedium
+            noneBtn.TextSize = 10
+            Instance.new("UICorner", noneBtn).CornerRadius = UDim.new(0, 5)
+            AddBounceEffect(noneBtn, UDim2.new(1, -4, 0, 26))
+            noneBtn.MouseButton1Click:Connect(function()
+                dropdownBtn.Text = "None"
+                PlayerMenu.Visible = false
+                if data.Callback then pcall(function() data.Callback("None") end) end
+            end)
+
+            -- Danh sách Display Name (Loại trừ tuyệt đối tên của bản thân)
+            for _, p in pairs(Players:GetPlayers()) do
+                if p and p ~= LocalPlayer then
+                    local pBtn = Instance.new("TextButton", scrollList)
+                    pBtn.Size = UDim2.new(1, -4, 0, 26)
+                    pBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 33)
+                    pBtn.Text = p.DisplayName ~= "" and p.DisplayName or p.Name
+                    pBtn.TextColor3 = Color3.fromRGB(240, 245, 255)
+                    pBtn.Font = Enum.Font.GothamMedium
+                    pBtn.TextSize = 10
+                    Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 5)
+                    AddBounceEffect(pBtn, UDim2.new(1, -4, 0, 26))
+                    
+                    pBtn.MouseButton1Click:Connect(function()
+                        dropdownBtn.Text = p.DisplayName ~= "" and p.DisplayName or p.Name
+                        PlayerMenu.Visible = false
+                        if data.Callback then pcall(function() data.Callback(p.DisplayName ~= "" and p.DisplayName or p.Name) end) end
+                    end)
+                end
+            end
+        end
+
+        dropdownBtn.MouseButton1Click:Connect(function()
+            populateList()
+            PlayerMenu.Visible = not PlayerMenu.Visible
+        end)
+
+        local dropdownAPI = {}
+        function dropdownAPI:Refresh(newOpts) end
+        return dropdownAPI
+    end
+
+    function api:CreateDropdown(data)
+        return api:CreatePlayerDropdown(data)
+    end
+    
+    function api:CreateButton(data)
+        local btn = Instance.new("TextButton", tabScroll)
+        btn.Size = UDim2.new(1, -8, 0, 30)
+        btn.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
+        btn.Text = data.Name
+        btn.TextColor3 = Color3.fromRGB(210, 220, 235)
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 11
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+        AddBounceEffect(btn, UDim2.new(1, -8, 0, 30))
+        
+        local stroke = Instance.new("UIStroke", btn)
+        stroke.Color = Color3.fromRGB(30, 36, 48)
+        stroke.Thickness = 1
+        
+        btn.MouseButton1Click:Connect(function()
+            if data.Callback then pcall(function() data.Callback() end) end
+        end)
+    end
+    
+    function api:CreateSection(name)
+        local secLabel = Instance.new("TextLabel", tabScroll)
+        secLabel.Size = UDim2.new(1, -8, 0, 18)
+        secLabel.BackgroundTransparency = 1
+        secLabel.Text = "  " .. name
+        secLabel.TextColor3 = Color3.fromRGB(110, 130, 160)
+        secLabel.Font = Enum.Font.GothamBold
+        secLabel.TextSize = 10
+        secLabel.TextXAlignment = Enum.TextXAlignment.Left
+    end
+    
+    return api
+end
+
+local MainTab = CreateTab("Main")
+local VisualTab = CreateTab("Visuals")
+local TeleportTab = CreateTab("Teleport")
+local SpectateTab = CreateTab("Spectate")
+local ServerTab = CreateTab("Server")
+local InfoTab = CreateTab("Info")
+
+-- Nút nổi mini phụ trợ trên màn hình mobile (Thêm hiệu ứng nảy Elastic)
 local function createSubButton(name, text, pos, size)
+    local btnSize = size or UDim2.new(0, 36, 0, 36)
     local btn = Instance.new("TextButton", ScreenGui)
     btn.Name = name
-    btn.Size = size or UDim2.new(0, 38, 0, 38)
+    btn.Size = btnSize
     btn.Position = pos
-    btn.BackgroundColor3 = Color3.fromRGB(30, 35, 45)
+    btn.BackgroundColor3 = Color3.fromRGB(20, 24, 32)
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
-    btn.TextColor3 = Color3.fromRGB(220, 230, 242)
+    btn.TextColor3 = Color3.fromRGB(220, 230, 250)
     btn.TextSize = 10
     btn.Visible = false
     btn.Active = true
     btn.Draggable = true
+    
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     local stroke = Instance.new("UIStroke", btn)
-    stroke.Color = Color3.fromRGB(60, 75, 95)
-    stroke.Thickness = 1
+    stroke.Color = Color3.fromRGB(35, 42, 55)
+    stroke.Thickness = 1.5
+    AddBounceEffect(btn, btnSize)
     return btn, stroke
 end
 
@@ -563,7 +995,7 @@ SubFlyBtn.MouseButton1Click:Connect(function()
         State.FlyActive = not State.FlyActive
         setupFly()
         if State.FlyActive then
-            SubFlyBtn.BackgroundColor3, SubFlyBtn.TextColor3, SubFlyStroke.Color = Color3.fromRGB(0, 120, 215), Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 170, 255)
+            SubFlyBtn.BackgroundColor3, SubFlyBtn.TextColor3, SubFlyStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
             if flyRootPart and flyHumanoid then
                 if flyBv then flyBv:Destroy() end
                 if flyBg then flyBg:Destroy() end
@@ -574,7 +1006,7 @@ SubFlyBtn.MouseButton1Click:Connect(function()
                 flyHumanoid.PlatformStand = true
             end
         else
-            SubFlyBtn.BackgroundColor3, SubFlyBtn.TextColor3, SubFlyStroke.Color = Color3.fromRGB(30, 35, 45), Color3.fromRGB(220, 230, 242), Color3.fromRGB(60, 75, 95)
+            SubFlyBtn.BackgroundColor3, SubFlyBtn.TextColor3, SubFlyStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
             if flyBv then flyBv:Destroy() flyBv = nil end
             if flyBg then flyBg:Destroy() flyBg = nil end
             if flyHumanoid then flyHumanoid.PlatformStand = false end
@@ -589,10 +1021,10 @@ SubRagdollBtn.MouseButton1Click:Connect(function()
         local char = LocalPlayer.Character
         if char then
             if State.RagdollActive then
-                SubRagdollBtn.BackgroundColor3, SubRagdollBtn.TextColor3, SubRagdollStroke.Color = Color3.fromRGB(0, 120, 215), Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 170, 255)
+                SubRagdollBtn.BackgroundColor3, SubRagdollBtn.TextColor3, SubRagdollStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
                 applyRagdoll(char, true)
             else
-                SubRagdollBtn.BackgroundColor3, SubRagdollBtn.TextColor3, SubRagdollStroke.Color = Color3.fromRGB(30, 35, 45), Color3.fromRGB(220, 230, 242), Color3.fromRGB(60, 75, 95)
+                SubRagdollBtn.BackgroundColor3, SubRagdollBtn.TextColor3, SubRagdollStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
                 applyRagdoll(char, false)
             end
         end
@@ -600,19 +1032,17 @@ SubRagdollBtn.MouseButton1Click:Connect(function()
 end)
 
 local SubFartBtn, SubFartStroke = createSubButton("SubFartBtn", "FART", UDim2.new(0.78, 0, 0.62, 0))
-SubFartBtn.MouseButton1Click:Connect(function()
-    executeFart()
-end)
+SubFartBtn.MouseButton1Click:Connect(function() executeFart() end)
 
 local SubTPBtn, SubTPStroke = createSubButton("SubTPBtn", "TP", UDim2.new(0.85, 0, 0.55, 0))
-SubTPBtn.TextSize = 12
+SubTPBtn.TextSize = 11
 SubTPBtn.MouseButton1Click:Connect(function()
     pcall(function()
         State.ClickTPActive = not State.ClickTPActive
         if State.ClickTPActive then
-            SubTPBtn.BackgroundColor3, SubTPBtn.TextColor3, SubTPStroke.Color = Color3.fromRGB(0, 120, 215), Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 170, 255)
+            SubTPBtn.BackgroundColor3, SubTPBtn.TextColor3, SubTPStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
         else
-            SubTPBtn.BackgroundColor3, SubTPBtn.TextColor3, SubTPStroke.Color = Color3.fromRGB(30, 35, 45), Color3.fromRGB(220, 230, 242), Color3.fromRGB(60, 75, 95)
+            SubTPBtn.BackgroundColor3, SubTPBtn.TextColor3, SubTPStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
         end
     end)
 end)
@@ -624,30 +1054,28 @@ local function updateSafeSpotButtons()
     pcall(function()
         SafeSpotContainer:ClearAllChildren()
         if not State.SafeSpot then return end
-        
         local count = State.SafeSpotCount or 3
         for i = 1, count do
             local btn = Instance.new("TextButton", SafeSpotContainer)
-            btn.Size = UDim2.new(0, 38, 0, 38)
+            btn.Size = UDim2.new(0, 36, 0, 36)
             btn.Position = UDim2.new(0.35 + ((i - 1) * 0.045), 0, 0.05, 0)
-            
-            btn.BackgroundColor3 = Color3.fromRGB(30, 35, 45)
+            btn.BackgroundColor3 = Color3.fromRGB(20, 24, 32)
             btn.Text = "S" .. i
             btn.Font = Enum.Font.GothamBold
-            btn.TextColor3 = Color3.fromRGB(220, 230, 242)
+            btn.TextColor3 = Color3.fromRGB(220, 230, 250)
             btn.TextSize = 10
             btn.Active = true
             btn.Draggable = true
-            
             Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
             local stroke = Instance.new("UIStroke", btn)
-            stroke.Color = Color3.fromRGB(60, 75, 95)
-            stroke.Thickness = 1
+            stroke.Color = Color3.fromRGB(35, 42, 55)
+            stroke.Thickness = 1.5
+            AddBounceEffect(btn, UDim2.new(0, 36, 0, 36))
 
             if State.SafeSpots[i] then
-                btn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+                btn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
                 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                stroke.Color = Color3.fromRGB(0, 170, 255)
+                stroke.Color = Color3.fromRGB(100, 180, 255)
                 btn.Text = "TP" .. i
             end
 
@@ -658,9 +1086,9 @@ local function updateSafeSpotButtons()
                         local hrp = char.HumanoidRootPart
                         if not State.SafeSpots[i] then
                             State.SafeSpots[i] = hrp.CFrame
-                            btn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+                            btn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
                             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                            stroke.Color = Color3.fromRGB(0, 170, 255)
+                            stroke.Color = Color3.fromRGB(100, 180, 255)
                             btn.Text = "TP" .. i
                         else
                             hrp.CFrame = State.SafeSpots[i]
@@ -677,27 +1105,25 @@ SubShiftLockBtn.MouseButton1Click:Connect(function()
     pcall(function()
         State.ShiftLockActive = not State.ShiftLockActive
         if State.ShiftLockActive then
-            SubShiftLockBtn.BackgroundColor3, SubShiftLockBtn.TextColor3, SubShiftLockStroke.Color = Color3.fromRGB(0, 120, 215), Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 170, 255)
+            SubShiftLockBtn.BackgroundColor3, SubShiftLockBtn.TextColor3, SubShiftLockStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
         else
-            SubShiftLockBtn.BackgroundColor3, SubShiftLockBtn.TextColor3, SubShiftLockStroke.Color = Color3.fromRGB(30, 35, 45), Color3.fromRGB(220, 230, 242), Color3.fromRGB(60, 75, 95)
+            SubShiftLockBtn.BackgroundColor3, SubShiftLockBtn.TextColor3, SubShiftLockStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
             local char = LocalPlayer.Character
-            if char and char:FindFirstChildOfClass("Humanoid") then
-                char.Humanoid.AutoRotate = true
-            end
+            if char and char:FindFirstChildOfClass("Humanoid") then char.Humanoid.AutoRotate = true end
         end
     end)
 end)
 
 local SubAutoClickBtn, SubAutoClickStroke = createSubButton("SubAutoClickBtn", "TAP", UDim2.new(0.78, 0, 0.75, 0))
-SubAutoClickBtn.TextSize = 11
+SubAutoClickBtn.TextSize = 10
 SubAutoClickBtn.MouseButton1Click:Connect(function()
     pcall(function()
         if State.AutoClickActive or State.AutoClickSelecting then
             State.AutoClickActive, State.AutoClickSelecting = false, false
-            SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(30, 35, 45), Color3.fromRGB(220, 230, 242), Color3.fromRGB(60, 75, 95)
+            SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
         else
             State.AutoClickSelecting = true
-            SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(210, 130, 0), Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 170, 0)
+            SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(240, 140, 0), Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 180, 50)
         end
     end)
 end)
@@ -710,7 +1136,7 @@ SubFakeLagBtn.MouseButton1Click:Connect(function()
         if char then
             local hrp = char:FindFirstChild("HumanoidRootPart")
             if State.FakeLagActive then
-                SubFakeLagBtn.BackgroundColor3, SubFakeLagBtn.TextColor3, SubFakeLagStroke.Color = Color3.fromRGB(0, 120, 215), Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 170, 255)
+                SubFakeLagBtn.BackgroundColor3, SubFakeLagBtn.TextColor3, SubFakeLagStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
                 if hrp then
                     FakeLagSavedCFrame = hrp.CFrame
                     FakeLagSavedVelocities = {}
@@ -725,7 +1151,7 @@ SubFakeLagBtn.MouseButton1Click:Connect(function()
                     end
                 end
             else
-                SubFakeLagBtn.BackgroundColor3, SubFakeLagBtn.TextColor3, SubFakeLagStroke.Color = Color3.fromRGB(30, 35, 45), Color3.fromRGB(220, 230, 242), Color3.fromRGB(60, 75, 95)
+                SubFakeLagBtn.BackgroundColor3, SubFakeLagBtn.TextColor3, SubFakeLagStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
                 for _, part in pairs(char:GetDescendants()) do
                     if part:IsA("BasePart") then
                         part.Anchored = false
@@ -745,9 +1171,9 @@ SubRewindBtn.MouseButton1Click:Connect(function()
     pcall(function()
         State.TimeRewindActive = not State.TimeRewindActive
         if State.TimeRewindActive then
-            SubRewindBtn.BackgroundColor3, SubRewindBtn.TextColor3, SubRewindStroke.Color = Color3.fromRGB(180, 50, 200), Color3.fromRGB(255, 255, 255), Color3.fromRGB(220, 100, 255)
+            SubRewindBtn.BackgroundColor3, SubRewindBtn.TextColor3, SubRewindStroke.Color = Color3.fromRGB(160, 40, 220), Color3.fromRGB(255, 255, 255), Color3.fromRGB(210, 120, 255)
         else
-            SubRewindBtn.BackgroundColor3, SubRewindBtn.TextColor3, SubRewindStroke.Color = Color3.fromRGB(30, 35, 45), Color3.fromRGB(220, 230, 242), Color3.fromRGB(60, 75, 95)
+            SubRewindBtn.BackgroundColor3, SubRewindBtn.TextColor3, SubRewindStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
         end
     end)
 end)
@@ -788,7 +1214,6 @@ local function applyXRay(enable)
                                 end
                             end
                         end
-                        
                         if not isPlayerPart then
                             OriginalXRayTransparency[part] = part.LocalTransparencyModifier
                             part.LocalTransparencyModifier = 0.9
@@ -805,15 +1230,50 @@ local function applyXRay(enable)
     end)
 end
 
-MainTab:Toggle({ Title = "Fly", Default = false, Callback = function(Value) State.Fly = Value SubFlyBtn.Visible = Value if not Value then State.FlyActive = false SubFlyBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45) SubFlyBtn.TextColor3 = Color3.fromRGB(220, 230, 242) SubFlyStroke.Color = Color3.fromRGB(60, 75, 95) if flyBv then pcall(function() flyBv:Destroy() end) flyBv = nil end if flyBg then pcall(function() flyBg:Destroy() end) flyBg = nil end if flyHumanoid then flyHumanoid.PlatformStand = false end end end })
-MainTab:Toggle({ Title = "Ragdoll", Default = false, Callback = function(Value) State.Ragdoll = Value SubRagdollBtn.Visible = Value local char = LocalPlayer.Character if not Value then State.RagdollActive = false SubRagdollBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45) SubRagdollBtn.TextColor3 = Color3.fromRGB(220, 230, 242) SubRagdollStroke.Color = Color3.fromRGB(60, 75, 95) if char then applyRagdoll(char, false) end elseif Value and State.RagdollActive and char then applyRagdoll(char, true) end end })
+-- ==================== LIÊN KẾT GIAO DIỆN VỚI TÍNH NĂNG ====================
+MainTab:CreateToggle({
+    Name = "Fly",
+    CurrentValue = false,
+    Callback = function(Value)
+        State.Fly = Value 
+        SubFlyBtn.Visible = Value 
+        if not Value then 
+            State.FlyActive = false 
+            SubFlyBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
+            SubFlyBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
+            SubFlyStroke.Color = Color3.fromRGB(35, 42, 55) 
+            if flyBv then pcall(function() flyBv:Destroy() end) flyBv = nil end 
+            if flyBg then pcall(function() flyBg:Destroy() end) flyBg = nil end 
+            if flyHumanoid then flyHumanoid.PlatformStand = false end 
+        end
+    end
+})
 
-MainTab:Toggle({ Title = "Aimbot", Default = false, Callback = function(Value) State.Aimbot = Value end })
-MainTab:Toggle({ Title = "InfJump", Default = false, Callback = function(Value) State.InfJump = Value end })
+MainTab:CreateToggle({
+    Name = "Ragdoll",
+    CurrentValue = false,
+    Callback = function(Value)
+        State.Ragdoll = Value 
+        SubRagdollBtn.Visible = Value 
+        local char = LocalPlayer.Character 
+        if not Value then 
+            State.RagdollActive = false 
+            SubRagdollBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
+            SubRagdollBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
+            SubRagdollStroke.Color = Color3.fromRGB(35, 42, 55) 
+            if char then applyRagdoll(char, false) end 
+        elseif Value and State.RagdollActive and char then 
+            applyRagdoll(char, true) 
+        end
+    end
+})
 
-MainTab:Toggle({
-   Title = "Noclip",
-   Default = false,
+MainTab:CreateToggle({ Name = "Aimbot", CurrentValue = false, Callback = function(Value) State.Aimbot = Value end })
+MainTab:CreateToggle({ Name = "InfJump", CurrentValue = false, Callback = function(Value) State.InfJump = Value end })
+
+MainTab:CreateToggle({
+   Name = "Noclip",
+   CurrentValue = false,
    Callback = function(Value)
       noclipEnabled = Value
       if noclipEnabled then
@@ -821,124 +1281,198 @@ MainTab:Toggle({
             pcall(function()
                 if noclipEnabled and game.Players.LocalPlayer.Character then
                    for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-                      if v:IsA("BasePart") and v.CanCollide then
-                         v.CanCollide = false
-                      end
+                      if v:IsA("BasePart") and v.CanCollide then v.CanCollide = false end
                    end
                 end
             end)
          end)
       else
-         if noclipConnection then
-            noclipConnection:Disconnect()
-         end
+         if noclipConnection then noclipConnection:Disconnect() end
          if game.Players.LocalPlayer.Character then
             for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-               pcall(function()
-                   if v:IsA("BasePart") then
-                      v.CanCollide = true
-                   end
-               end)
+               pcall(function() if v:IsA("BasePart") then v.CanCollide = true end end)
             end
          end
       end
-   end,
+   end
 })
 
-MainTab:Toggle({ Title = "Anti Slap", Default = false, Callback = function(Value) State.AntiSlap = Value end })
-MainTab:Toggle({ Title = "Anti Fling", Default = false, Callback = function(Value) State.AntiFling = Value end })
-MainTab:Toggle({ Title = "Air Walk", Default = false, Callback = function(Value) State.AirWalk = Value if not Value then AirWalkPlatform.CanCollide = false end end })
-MainTab:Toggle({ Title = "Shift Lock", Default = false, Callback = function(Value) State.ShiftLock = Value SubShiftLockBtn.Visible = Value if not Value then State.ShiftLockActive = false SubShiftLockBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45) SubShiftLockBtn.TextColor3 = Color3.fromRGB(220, 230, 242) SubShiftLockStroke.Color = Color3.fromRGB(60, 75, 95) local char = LocalPlayer.Character if char and char:FindFirstChildOfClass("Humanoid") then char.Humanoid.AutoRotate = true end end end })
-MainTab:Toggle({ Title = "Auto Jump", Default = false, Callback = function(Value) State.AutoJump = Value end })
-
-MainTab:Input({ Title = "WalkSpeed", Default = "16", Placeholder = "16", Callback = function(Text) 
-    pcall(function()
-        local val = tonumber(Text) 
-        if val then 
-            State.WalkSpeed = val 
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = val
-            end
-        end 
-    end)
-end })
-
-MainTab:Input({ Title = "JumpPower", Default = "50", Placeholder = "50", Callback = function(Text) 
-    pcall(function()
-        local val = tonumber(Text) 
-        if val then 
-            State.JumpPower = val 
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                hum.UseJumpPower = true
-                hum.JumpPower = val
-            end
-        end 
-    end)
-end })
-
-VisualTab:Toggle({ Title = "Fart", Default = false, Callback = function(Value) State.Fart = Value SubFartBtn.Visible = Value end })
-VisualTab:Toggle({ Title = "ESP Players", Default = false, Callback = function(Value) State.ESP = Value end })
-VisualTab:Toggle({ Title = "X-Ray", Default = false, Callback = function(Value) State.XRay = Value applyXRay(Value) end })
-VisualTab:Toggle({ Title = "Full Bright", Default = false, Callback = function(Value) State.FullBright = Value applyFullBright(Value) end })
-VisualTab:Toggle({ Title = "Stretched Screen", Default = false, Callback = function(Value) State.Stretched = Value end })
-VisualTab:Toggle({ Title = "Fix Lag", Default = false, Callback = function(Value) State.FixLag = Value applyFixLag(Value) end })
-
-VisualTab:Dropdown({ Title = "Sky Box", Values = {"Default", "Sunset", "Night"}, Default = "Default", Callback = function(Option)
-    pcall(function()
-        local choice = Option
-        if choice == "Sunset" then 
-            Lighting.ClockTime, Lighting.Brightness = 18, 1
-        elseif choice == "Night" then 
-            Lighting.ClockTime, Lighting.Brightness = 0, 0.5
-        else 
-            Lighting.ClockTime, Lighting.Brightness = 14, OriginalLighting.Brightness 
-        end
-    end)
-end })
-
-TeleportTab:Toggle({ Title = "Click Teleport", Default = false, Callback = function(Value) State.ClickTP = Value SubTPBtn.Visible = Value if not Value then State.ClickTPActive = false SubTPBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45) SubTPBtn.TextColor3 = Color3.fromRGB(220, 230, 242) SubTPStroke.Color = Color3.fromRGB(60, 75, 95) end end })
-
-TeleportTab:Toggle({ 
-    Title = "Safe Spot", 
-    Default = false, 
-    Callback = function(Value) 
-        State.SafeSpot = Value 
+MainTab:CreateToggle({ Name = "Anti Slap", CurrentValue = false, Callback = function(Value) State.AntiSlap = Value end })
+MainTab:CreateToggle({ Name = "Anti Fling", CurrentValue = false, Callback = function(Value) State.AntiFling = Value end })
+MainTab:CreateToggle({ Name = "Air Walk", CurrentValue = false, Callback = function(Value) State.AirWalk = Value if not Value then AirWalkPlatform.CanCollide = false end end })
+MainTab:CreateToggle({
+    Name = "Shift Lock",
+    CurrentValue = false,
+    Callback = function(Value)
+        State.ShiftLock = Value 
+        SubShiftLockBtn.Visible = Value 
         if not Value then 
-            State.SafeSpots = {} 
-        end 
-        updateSafeSpotButtons() 
-    end 
+            State.ShiftLockActive = false 
+            SubShiftLockBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
+            SubShiftLockBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
+            SubShiftLockStroke.Color = Color3.fromRGB(35, 42, 55) 
+            local char = LocalPlayer.Character 
+            if char and char:FindFirstChildOfClass("Humanoid") then char.Humanoid.AutoRotate = true end 
+        end
+    end
+})
+MainTab:CreateToggle({ Name = "Auto Jump", CurrentValue = false, Callback = function(Value) State.AutoJump = Value end })
+
+MainTab:CreateInput({
+    Name = "WalkSpeed",
+    CurrentValue = "16",
+    PlaceholderText = "16",
+    Callback = function(Text)
+        pcall(function()
+            local val = tonumber(Text) 
+            if val then 
+                State.WalkSpeed = val 
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = val
+                end
+            end 
+        end)
+    end
 })
 
-TeleportTab:Input({ 
-    Title = "Safe Spot Count", 
-    Default = "3", 
-    Placeholder = "3", 
-    Callback = function(Text) 
+MainTab:CreateInput({
+    Name = "JumpPower",
+    CurrentValue = "50",
+    PlaceholderText = "50",
+    Callback = function(Text)
+        pcall(function()
+            local val = tonumber(Text) 
+            if val then 
+                State.JumpPower = val 
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    hum.UseJumpPower = true
+                    hum.JumpPower = val
+                end
+            end 
+        end)
+    end
+})
+
+VisualTab:CreateToggle({ Name = "Fart", CurrentValue = false, Callback = function(Value) State.Fart = Value SubFartBtn.Visible = Value end })
+VisualTab:CreateToggle({ Name = "ESP Players", CurrentValue = false, Callback = function(Value) State.ESP = Value end })
+VisualTab:CreateToggle({ Name = "X-Ray", CurrentValue = false, Callback = function(Value) State.XRay = Value applyXRay(Value) end })
+VisualTab:CreateToggle({ Name = "Full Bright", CurrentValue = false, Callback = function(Value) State.FullBright = Value applyFullBright(Value) end })
+VisualTab:CreateToggle({ Name = "Stretched Screen", CurrentValue = false, Callback = function(Value) State.Stretched = Value end })
+VisualTab:CreateToggle({ Name = "Fix Lag", CurrentValue = false, Callback = function(Value) State.FixLag = Value applyFixLag(Value) end })
+
+VisualTab:CreateDropdown({
+    Name = "Sky Box",
+    Options = {"Default", "Sunset", "Night"},
+    CurrentOption = "Default",
+    Callback = function(Option)
+        pcall(function()
+            local choice = Option
+            if choice == "Sunset" then 
+                Lighting.ClockTime, Lighting.Brightness = 18, 1
+            elseif choice == "Night" then 
+                Lighting.ClockTime, Lighting.Brightness = 0, 0.5
+            else 
+                Lighting.ClockTime, Lighting.Brightness = 14, OriginalLighting.Brightness 
+            end
+        end)
+    end
+})
+
+TeleportTab:CreateToggle({
+    Name = "Click Teleport",
+    CurrentValue = false,
+    Callback = function(Value)
+        State.ClickTP = Value 
+        SubTPBtn.Visible = Value 
+        if not Value then 
+            State.ClickTPActive = false 
+            SubTPBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
+            SubTPBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
+            SubTPStroke.Color = Color3.fromRGB(35, 42, 55) 
+        end
+    end
+})
+
+TeleportTab:CreateToggle({
+    Name = "Safe Spot",
+    CurrentValue = false,
+    Callback = function(Value)
+        State.SafeSpot = Value 
+        if not Value then State.SafeSpots = {} end 
+        updateSafeSpotButtons()
+    end
+})
+
+TeleportTab:CreateInput({
+    Name = "Safe Spot Count",
+    CurrentValue = "3",
+    PlaceholderText = "3",
+    Callback = function(Text)
         pcall(function()
             local val = tonumber(Text) 
             if val and val > 0 then 
                 State.SafeSpotCount = math.clamp(val, 1, 10)
-                if State.SafeSpot then
-                    updateSafeSpotButtons()
-                end
+                if State.SafeSpot then updateSafeSpotButtons() end
             end 
         end)
-    end 
+    end
 })
 
-TeleportTab:Toggle({ Title = "Auto Click", Default = false, Callback = function(Value) State.AutoClick = Value SubAutoClickBtn.Visible = Value if not Value then State.AutoClickActive = false State.AutoClickSelecting = false SubAutoClickBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45) SubAutoClickBtn.TextColor3 = Color3.fromRGB(220, 230, 242) SubAutoClickStroke.Color = Color3.fromRGB(60, 75, 95) end end })
-TeleportTab:Toggle({ Title = "Fake Lag", Default = false, Callback = function(Value) State.FakeLag = Value SubFakeLagBtn.Visible = Value if not Value then State.FakeLagActive = false SubFakeLagBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45) SubFakeLagBtn.TextColor3 = Color3.fromRGB(220, 230, 242) SubFakeLagStroke.Color = Color3.fromRGB(60, 75, 95) end end })
-TeleportTab:Toggle({ Title = "Time Rewind", Default = false, Callback = function(Value) State.TimeRewind = Value SubRewindBtn.Visible = Value if not Value then State.TimeRewindActive = false SubRewindBtn.BackgroundColor3 = Color3.fromRGB(30, 35, 45) SubRewindBtn.TextColor3 = Color3.fromRGB(220, 230, 242) SubRewindStroke.Color = Color3.fromRGB(60, 75, 95) end end })
-TeleportTab:Toggle({ Title = "Teleport All", Default = false, Callback = function(Value) State.TeleportAll = Value end })
-TeleportTab:Toggle({ Title = "Spin Ultra", Default = false, Callback = function(Value) State.Spin = Value end })
-TeleportTab:Toggle({ Title = "Animation Speed", Default = false, Callback = function(Value) State.AnimationSpeed = Value end })
+TeleportTab:CreateToggle({
+    Name = "Auto Click",
+    CurrentValue = false,
+    Callback = function(Value)
+        State.AutoClick = Value 
+        SubAutoClickBtn.Visible = Value 
+        if not Value then 
+            State.AutoClickActive = false 
+            State.AutoClickSelecting = false 
+            SubAutoClickBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
+            SubAutoClickBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
+            SubAutoClickStroke.Color = Color3.fromRGB(35, 42, 55) 
+        end
+    end
+})
 
-TeleportTab:Toggle({ 
-    Title = "Hitbox Expander", 
-    Default = false, 
-    Callback = function(Value) 
+TeleportTab:CreateToggle({
+    Name = "Fake Lag",
+    CurrentValue = false,
+    Callback = function(Value)
+        State.FakeLag = Value 
+        SubFakeLagBtn.Visible = Value 
+        if not Value then 
+            State.FakeLagActive = false 
+            SubFakeLagBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
+            SubFakeLagBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
+            SubFakeLagStroke.Color = Color3.fromRGB(35, 42, 55) 
+        end
+    end
+})
+
+TeleportTab:CreateToggle({
+    Name = "Time Rewind",
+    CurrentValue = false,
+    Callback = function(Value)
+        State.TimeRewind = Value 
+        SubRewindBtn.Visible = Value 
+        if not Value then 
+            State.TimeRewindActive = false 
+            SubRewindBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
+            SubRewindBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
+            SubRewindStroke.Color = Color3.fromRGB(35, 42, 55) 
+        end
+    end
+})
+
+TeleportTab:CreateToggle({ Name = "Teleport All", CurrentValue = false, Callback = function(Value) State.TeleportAll = Value end })
+TeleportTab:CreateToggle({ Name = "Spin Ultra", CurrentValue = false, Callback = function(Value) State.Spin = Value end })
+TeleportTab:CreateToggle({ Name = "Animation Speed", CurrentValue = false, Callback = function(Value) State.AnimationSpeed = Value end })
+
+TeleportTab:CreateToggle({
+    Name = "Hitbox Expander",
+    CurrentValue = false,
+    Callback = function(Value)
         State.HitboxExpander = Value 
         if not Value then
             pcall(function()
@@ -956,30 +1490,29 @@ TeleportTab:Toggle({
                 end
             end)
         end
-    end 
+    end
 })
 
-TeleportTab:Toggle({ Title = "Fast Reset Button", Default = false, Callback = function(Value) FastResetSubBtn.Visible = Value end })
-TeleportTab:Input({ Title = "Gravity", Default = "196.2", Placeholder = "196.2", Callback = function(Text) pcall(function() local val = tonumber(Text) if val then State.Gravity = val Workspace.Gravity = val end end) end })
-TeleportTab:Input({ Title = "FOV (1-120)", Default = "70", Placeholder = "70", Callback = function(Text) pcall(function() local val = tonumber(Text) if val then State.FOV = math.clamp(val, 1, 120) end end) end })
+TeleportTab:CreateToggle({ Name = "Fast Reset Button", CurrentValue = false, Callback = function(Value) FastResetSubBtn.Visible = Value end })
 
-local function getPlayerList()
-    local list = {"None"}
-    pcall(function()
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer then
-                table.insert(list, p.DisplayName)
-            end
-        end
-    end)
-    return list
-end
+TeleportTab:CreateInput({
+    Name = "Gravity",
+    CurrentValue = "196.2",
+    PlaceholderText = "196.2",
+    Callback = function(Text) pcall(function() local val = tonumber(Text) if val then State.Gravity = val Workspace.Gravity = val end end) end
+})
 
-local spectateNames = getPlayerList()
-local SpectateDropdown = SpectateTab:Dropdown({ 
-    Title = "Select Player to Spectate", 
-    Values = spectateNames, 
-    Default = "None", 
+TeleportTab:CreateInput({
+    Name = "FOV (1-120)",
+    CurrentValue = "70",
+    PlaceholderText = "70",
+    Callback = function(Text) pcall(function() local val = tonumber(Text) if val then State.FOV = math.clamp(val, 1, 120) end end) end
+})
+
+-- Spectate Tab
+SpectateTab:CreatePlayerDropdown({
+    Name = "Select Player to Spectate",
+    CurrentOption = "None",
     Callback = function(Option)
         pcall(function()
             local displayName = Option
@@ -993,19 +1526,16 @@ local SpectateDropdown = SpectateTab:Dropdown({
                 end)
             else
                 for _, p in pairs(Players:GetPlayers()) do
-                    if p.DisplayName == displayName then
-                        SpectateTarget = p
-                        break
-                    end
+                    if p ~= LocalPlayer and (p.DisplayName ~= "" and p.DisplayName or p.Name) == displayName then SpectateTarget = p break end
                 end
             end
         end)
-    end 
+    end
 })
 
-SpectateTab:Toggle({
-    Title = "Start / Stop Spectate",
-    Default = false,
+SpectateTab:CreateToggle({
+    Name = "Start / Stop Spectate",
+    CurrentValue = false,
     Callback = function(Value)
         State.SpectateActive = Value
         if not Value then
@@ -1019,81 +1549,78 @@ SpectateTab:Toggle({
     end
 })
 
-local LoopPeopleDropdown = TeleportTab:Dropdown({ 
-    Title = "Loop People (Target)", 
-    Values = getPlayerList(), 
-    Default = "None", 
+-- Teleport Tab (Loop People & Fling)
+TeleportTab:CreatePlayerDropdown({
+    Name = "Loop People (Target)",
+    CurrentOption = "None",
     Callback = function(Option)
         pcall(function()
             local displayName = Option
             if displayName == "None" or not displayName then 
                 State.LoopPeople = false 
+                State.LoopPeopleActive = false
                 TargetPlayer = nil
             else 
                 for _, p in pairs(Players:GetPlayers()) do
-                    if p.DisplayName == displayName then
-                        TargetPlayer = p
-                        State.LoopPeople = true
-                        break
-                    end
-                end
-            end
-        end)
-    end 
-})
-
-local FlingSection = TeleportTab:Section({ Title = "Fling" })
-
-local FlingDropdownValues = getPlayerList()
-
-local FlingDropdown = FlingSection:Dropdown({
-    Title = "Select Target to Fling",
-    Values = FlingDropdownValues,
-    Default = "None",
-    Callback = function(Option)
-        pcall(function()
-            if Option and Option ~= "None" then
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p.DisplayName == Option then
-                        FlingTargets[p.Name] = p
-                        break
-                    end
+                    if p ~= LocalPlayer and (p.DisplayName ~= "" and p.DisplayName or p.Name) == displayName then TargetPlayer = p break end
                 end
             end
         end)
     end
 })
 
-FlingSection:Button({
-    Title = "Start Fling",
+TeleportTab:CreateButton({
+    Name = "Start Loop People",
+    Callback = function()
+        if TargetPlayer then
+            State.LoopPeopleActive = true
+            State.LoopPeople = true
+        end
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Stop Loop People",
+    Callback = function()
+        State.LoopPeopleActive = false
+        State.LoopPeople = false
+    end
+})
+
+TeleportTab:CreateSection("Fling Control")
+
+TeleportTab:CreatePlayerDropdown({
+    Name = "Select Target to Fling",
+    CurrentOption = "None",
+    Callback = function(Option)
+        pcall(function()
+            local displayName = Option
+            if displayName and displayName ~= "None" then
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and (p.DisplayName ~= "" and p.DisplayName or p.Name) == displayName then FlingTargets[p.Name] = p break end
+                end
+            end
+        end)
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Start Fling",
     Callback = function()
         if FlingActive then return end
         local count = 0
         for _ in pairs(FlingTargets) do count = count + 1 end
-        if count == 0 then
-            return
-        end
+        if count == 0 then return end
         
         FlingActive = true
-        
         task.spawn(function()
             while FlingActive do
                 local validTargets = {}
                 for name, player in pairs(FlingTargets) do
-                    if player and player.Parent then
-                        validTargets[name] = player
-                    else
-                        FlingTargets[name] = nil
-                    end
+                    if player and player.Parent then validTargets[name] = player else FlingTargets[name] = nil end
                 end
-                
                 for _, player in pairs(validTargets) do
-                    if FlingActive then
-                        SkidFling(player)
-                        task.wait(0.1)
-                    else
-                        break
-                    end
+                    if FlingActive then SkidFling(player) task.wait(0.1) else break end
                 end
                 task.wait(0.5)
             end
@@ -1101,130 +1628,97 @@ FlingSection:Button({
     end
 })
 
-FlingSection:Button({
-    Title = "Stop Fling",
+TeleportTab:CreateButton({
+    Name = "Stop Fling",
     Callback = function()
         if not FlingActive then return end
         FlingActive = false
     end
 })
 
--- TỐI ƯU HÓA: Dùng debounce + task.defer để tránh giật lag khi người chơi vào/ra server
-local dropdownUpdateConnection = nil
-local function refreshDropdowns()
-    if dropdownUpdateConnection then return end
-    dropdownUpdateConnection = task.delay(0.5, function()
-        pcall(function()
-            local currentList = getPlayerList()
-            pcall(function()
-                SpectateDropdown:Refresh(currentList)
-                LoopPeopleDropdown:Refresh(currentList)
-                FlingDropdown:Refresh(currentList)
-            end)
+-- Server Tab
+ServerTab:CreateButton({
+    Name = "Rejoin Server",
+    Callback = function() 
+        pcall(function() 
+            if #Players:GetPlayers() <= 1 then TeleportService:Teleport(game.PlaceId, LocalPlayer) 
+            else TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer) end 
         end)
-        dropdownUpdateConnection = nil
-    end)
-end
+    end
+})
 
-Players.PlayerAdded:Connect(refreshDropdowns)
-Players.PlayerRemoving:Connect(function(plr)
-    pcall(function()
-        if SpectateTarget == plr then
-            State.SpectateActive = false
-            SpectateTarget = nil
+ServerTab:CreateButton({
+    Name = "Server Hop (Low Players)",
+    Callback = function()
+        task.spawn(function()
             pcall(function()
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                    Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                local raw = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/0?sortOrder=Asc&limit=100")
+                local data = HttpService:JSONDecode(raw)
+                if data and data.data then
+                    local validServers = {}
+                    for _, server in ipairs(data.data) do if server.id ~= game.JobId and server.playing < server.maxPlayers then table.insert(validServers, server) end end
+                    if #validServers > 0 then table.sort(validServers, function(a, b) return a.playing < b.playing end) TeleportService:TeleportToPlaceInstance(game.PlaceId, validServers[1].id, LocalPlayer) end
                 end
             end)
-        end
-        if TargetPlayer == plr then 
-            State.LoopPeople = false 
-            TargetPlayer = nil 
-        end
-        if FlingTargets[plr.Name] then
-            FlingTargets[plr.Name] = nil
-        end
-        refreshDropdowns()
-    end)
-end)
+        end)
+    end
+})
 
-ServerTab:Button({ Title = "Rejoin Server", Callback = function() pcall(function() if #Players:GetPlayers() <= 1 then TeleportService:Teleport(game.PlaceId, LocalPlayer) else TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer) end end) end })
-ServerTab:Button({ Title = "Server Hop (Low Players)", Callback = function()
-    task.spawn(function()
-        pcall(function()
-            local raw = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/0?sortOrder=Asc&limit=100")
-            local data = HttpService:JSONDecode(raw)
-            if data and data.data then
-                local validServers = {}
-                for _, server in ipairs(data.data) do if server.id ~= game.JobId and server.playing < server.maxPlayers then table.insert(validServers, server) end end
-                if #validServers > 0 then table.sort(validServers, function(a, b) return a.playing < b.playing end) TeleportService:TeleportToPlaceInstance(game.PlaceId, validServers[1].id, LocalPlayer) end
-            end
+ServerTab:CreateButton({
+    Name = "Server Hop (High Players)",
+    Callback = function()
+        task.spawn(function()
+            pcall(function()
+                local raw = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/0?sortOrder=Asc&limit=100")
+                local data = HttpService:JSONDecode(raw)
+                if data and data.data then
+                    local validServers = {}
+                    for _, server in ipairs(data.data) do if server.id ~= game.JobId and server.playing < server.maxPlayers then table.insert(validServers, server) end end
+                    if #validServers > 0 then table.sort(validServers, function(a, b) return a.playing > b.playing end) TeleportService:TeleportToPlaceInstance(game.PlaceId, validServers[1].id, LocalPlayer) end
+                end
+            end)
         end)
-    end)
-end })
-ServerTab:Button({ Title = "Server Hop (High Players)", Callback = function()
-    task.spawn(function()
-        pcall(function()
-            local raw = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/0?sortOrder=Asc&limit=100")
-            local data = HttpService:JSONDecode(raw)
-            if data and data.data then
-                local validServers = {}
-                for _, server in ipairs(data.data) do if server.id ~= game.JobId and server.playing < server.maxPlayers then table.insert(validServers, server) end end
-                if #validServers > 0 then table.sort(validServers, function(a, b) return a.playing > b.playing end) TeleportService:TeleportToPlaceInstance(game.PlaceId, validServers[1].id, LocalPlayer) end
-            end
-        end)
-    end)
-end })
+    end
+})
 
 local soundIdInput = ""
-ServerTab:Input({ Title = "Sound ID", Default = "", Placeholder = "Enter Sound ID", Callback = function(Text) soundIdInput = Text end })
-ServerTab:Button({ Title = "Play / Stop Sound", Callback = function()
-    pcall(function()
-        if not CurrentSound then
-            if soundIdInput and soundIdInput ~= "" then
-                pcall(function()
-                    CurrentSound = Instance.new("Sound")
-                    CurrentSound.SoundId = "rbxassetid://" .. soundIdInput
-                    CurrentSound.Volume = 2
-                    CurrentSound.Looped = true
-                    CurrentSound.Parent = LocalPlayer.Character or workspace
-                    CurrentSound:Play()
-                end)
-            end
-        else 
-            pcall(function() 
-                CurrentSound:Stop() 
-                CurrentSound:Destroy() 
-                CurrentSound = nil 
-            end) 
-        end
-    end)
-end })
-
-local authorSection = InfoTab:Section({ Title = "Creator Profile" })
-
-authorSection:Button({
-    Title = "Display Name: C1rest",
-    Desc = "Roblox Account",
-    Callback = function() end
+ServerTab:CreateInput({
+    Name = "Sound ID",
+    CurrentValue = "",
+    PlaceholderText = "Enter Sound ID",
+    Callback = function(Text) soundIdInput = Text end
 })
 
-authorSection:Button({
-    Title = "TikTok: @nguynkhanq",
-    Desc = "Follow creator on TikTok",
-    Callback = function() end
-})
-
-authorSection:Button({
-    Title = "Discord: https://discord.gg/gfkNH3dxE",
-    Desc = "Click to copy Discord link",
+ServerTab:CreateButton({
+    Name = "Play / Stop Sound",
     Callback = function()
         pcall(function()
-            if setclipboard then
-                setclipboard("https://discord.gg/gfkNH3dxE")
+            if not CurrentSound then
+                if soundIdInput and soundIdInput ~= "" then
+                    pcall(function()
+                        CurrentSound = Instance.new("Sound")
+                        CurrentSound.SoundId = "rbxassetid://" .. soundIdInput
+                        CurrentSound.Volume = 2
+                        CurrentSound.Looped = true
+                        CurrentSound.Parent = LocalPlayer.Character or workspace
+                        CurrentSound:Play()
+                    end)
+                end
+            else 
+                pcall(function() CurrentSound:Stop() CurrentSound:Destroy() CurrentSound = nil end) 
             end
         end)
+    end
+})
+
+-- Info Tab
+InfoTab:CreateSection("Creator Profile")
+InfoTab:CreateButton({ Name = "Display Name: C1rest", Callback = function() end })
+InfoTab:CreateButton({ Name = "TikTok: @nguynkhanq", Callback = function() end })
+InfoTab:CreateButton({
+    Name = "Discord: https://discord.gg/gfkNH3dxE (Click to copy)",
+    Callback = function()
+        pcall(function() if setclipboard then setclipboard("https://discord.gg/gfkNH3dxE") end end)
     end
 })
 
@@ -1236,7 +1730,7 @@ table.insert(Connections, UserInputService.InputBegan:Connect(function(input, ga
             if State.AutoClick and State.AutoClickSelecting then
                 State.AutoClickPoint = Vector2.new(input.Position.X, input.Position.Y)
                 State.AutoClickSelecting, State.AutoClickActive = false, true
-                SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(0, 120, 215), Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 170, 255)
+                SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
                 return
             end
             if State.ClickTP and State.ClickTPActive then
@@ -1258,7 +1752,7 @@ end))
 
 task.spawn(function()
     while true do
-        task.wait(0.1)
+        task.wait(0.15)
         pcall(function()
             if State.AutoClick and State.AutoClickActive then
                 pcall(function()
@@ -1272,7 +1766,7 @@ end)
 
 task.spawn(function()
     while true do
-        task.wait(0.01)
+        task.wait(0.02)
         pcall(function()
             if State.TeleportAll then
                 pcall(function()
@@ -1285,7 +1779,7 @@ task.spawn(function()
                                 local targetHum = p.Character:FindFirstChildOfClass("Humanoid")
                                 if targetHrp and targetHum and targetHum.Health > 0 then
                                     hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 3, 0)
-                                    task.wait(0.01)
+                                    task.wait(0.02)
                                 end
                             end
                             if not State.TeleportAll then break end
@@ -1299,7 +1793,6 @@ end)
 
 local rainbowColor = Color3.fromRGB(0, 150, 80)
 local hue = 0
-
 local loopTimer = 0
 local espUpdateTimer = 0
 local antiTouchTimer = 0
@@ -1335,9 +1828,7 @@ local function getClosestPlayerToHead()
                         local hasKnife = p.Character:FindFirstChild("Knife") or p.Backpack:FindFirstChild("Knife")
                         if not hasKnife then isValid = false end
                     else
-                        if p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team and p.Team.Name ~= "Neutral" then
-                            isValid = false
-                        end
+                        if p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team and p.Team.Name ~= "Neutral" then isValid = false end
                     end
                     
                     if isValid then
@@ -1352,10 +1843,7 @@ local function getClosestPlayerToHead()
                         
                         if not rayResult then
                             local dist = (head.Position - myHrp.Position).Magnitude
-                            if dist < shortestDistance then 
-                                shortestDistance = dist 
-                                closestPlayer = p 
-                            end
+                            if dist < shortestDistance then shortestDistance = dist closestPlayer = p end
                         end
                     end
                 end
@@ -1369,9 +1857,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
     pcall(function()
         if State.SpectateActive and SpectateTarget and SpectateTarget.Character then
             local targetHum = SpectateTarget.Character:FindFirstChildOfClass("Humanoid")
-            if targetHum and Camera then
-                Camera.CameraSubject = targetHum
-            end
+            if targetHum and Camera then Camera.CameraSubject = targetHum end
         end
 
         if State.Stretched and workspace.CurrentCamera then
@@ -1395,9 +1881,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                 local target = getClosestPlayerToHead()
                 if target and target.Character then
                     local head = target.Character:FindFirstChild("Head")
-                    if head and Camera then
-                        Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, head.Position), 0.9)
-                    end
+                    if head and Camera then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, head.Position), 0.9) end
                 end
             end)
         end
@@ -1417,7 +1901,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                             pcall(function() hrp.AssemblyLinearVelocity = targetData.Velocity hum:ChangeState(targetData.State) end)
                         end
                     else
-                        State.TimeRewindActive = false SubRewindBtn.BackgroundColor3, SubRewindBtn.TextColor3, SubRewindStroke.Color = Color3.fromRGB(30, 35, 45), Color3.fromRGB(220, 230, 242), Color3.fromRGB(60, 75, 95)
+                        State.TimeRewindActive = false SubRewindBtn.BackgroundColor3, SubRewindBtn.TextColor3, SubRewindStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
                     end
                 end
             end
@@ -1445,7 +1929,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
             end)
         end
 
-        if State.LoopPeople and TargetPlayer and TargetPlayer.Character then
+        if State.LoopPeopleActive and TargetPlayer and TargetPlayer.Character then
             local char, targetChar = LocalPlayer.Character, TargetPlayer.Character
             if char and targetChar then
                 local hrp, targetHrp = char:FindFirstChild("HumanoidRootPart"), targetChar:FindFirstChild("HumanoidRootPart")
@@ -1483,7 +1967,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
         if State.ESP then
             hue = (hue + 0.01) % 1
             rainbowColor = Color3.fromHSV(hue, 0.8, 0.9)
-            if espUpdateTimer >= 0.8 then
+            if espUpdateTimer >= 1.0 then
                 espUpdateTimer = 0
                 task.defer(function()
                     pcall(function()
@@ -1506,7 +1990,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                                         textLabel.Name, textLabel.Size, textLabel.BackgroundTransparency, textLabel.Font, textLabel.TextSize, textLabel.TextStrokeTransparency = "Text", UDim2.new(1, 0, 1, 0), 1, Enum.Font.GothamBold, 10, 0.5
                                     end
                                     local tLabel = nameTag:FindFirstChild("Text")
-                                    if tLabel then tLabel.Text, tLabel.TextColor3 = p.DisplayName, rainbowColor end
+                                    if tLabel then tLabel.Text, tLabel.TextColor3 = p.DisplayName ~= "" and p.DisplayName or p.Name, rainbowColor end
                                 end
                             end
                         end
@@ -1553,7 +2037,7 @@ table.insert(Connections, RunService.Stepped:Connect(function(delta)
             end
             if State.AntiFling then
                 antiTouchTimer = antiTouchTimer + delta
-                if antiTouchTimer >= 0.5 then
+                if antiTouchTimer >= 0.6 then
                     antiTouchTimer = 0
                     task.spawn(function()
                         pcall(function()
