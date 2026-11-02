@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro, Fixed Loading Curve, Sub-Menu Animations, Audio Separation)
+-- Roblox Delta Script - KIYO HUB (Intro Cyberpunk + Floating White Particles, Smooth Fade-Out, Zero Lag, Audio Separation)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -32,7 +32,7 @@ local function PlayUISound(soundId, volume)
     end)
 end
 
--- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + NEON PRO UI) ====================
+-- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + HẠT TRẮNG BAY + THU NHỎ BIẾN MẤT) ====================
 local IntroGui = Instance.new("ScreenGui", ParentGui)
 IntroGui.Name = "KiyoHubIntroGui"
 IntroGui.ResetOnSpawn = false
@@ -49,22 +49,30 @@ IntroFrame.Size = UDim2.new(0, 0, 0, 0)
 IntroFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 IntroFrame.BackgroundColor3 = Color3.fromRGB(8, 11, 16)
 IntroFrame.BorderSizePixel = 0
-IntroFrame.ClipsDescendants = true
+IntroFrame.ClipsDescendants = false
 
 Instance.new("UICorner", IntroFrame).CornerRadius = UDim.new(0, 16)
 local IntroStroke = Instance.new("UIStroke", IntroFrame)
 IntroStroke.Color = Color3.fromRGB(0, 130, 255)
 IntroStroke.Thickness = 2
 
--- Glow Background Effect
-local GlowFrame = Instance.new("Frame", IntroFrame)
-GlowFrame.Size = UDim2.new(1, 0, 1, 0)
-GlowFrame.BackgroundTransparency = 1
-local GlowGradient = Instance.new("UIGradient", GlowFrame)
-GlowGradient.Transparency = NumberSequence.new({
-    NumberSequenceKeypoint.new(0, 0.8),
-    NumberSequenceKeypoint.new(1, 1)
-})
+-- Hiệu ứng hạt trắng bay bên ngoài intro (Particle Emitter nhẹ nhàng, tối ưu không giật lag)
+local ParticleHolder = Instance.new("Part", IntroGui)
+ParticleHolder.Size = Vector3.new(1, 1, 1)
+ParticleHolder.Transparency = 1
+ParticleHolder.Anchored = true
+ParticleHolder.CanCollide = false
+ParticleHolder.Position = Vector3.new(0, 0, 0)
+
+local ParticleEmitter = Instance.new("ParticleEmitter", ParticleHolder)
+ParticleEmitter.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+ParticleEmitter.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.15), NumberSequenceKeypoint.new(1, 0.05)})
+ParticleEmitter.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1)})
+ParticleEmitter.Lifetime = NumberRange.new(1.5, 3.0)
+ParticleEmitter.Rate = 25
+ParticleEmitter.Speed = NumberRange.new(2, 5)
+ParticleEmitter.SpreadAngle = Vector2.new(180, 180)
+ParticleEmitter.Acceleration = Vector3.new(0, 2, 0)
 
 -- Logo Icon trong Intro
 local IntroLogo = Instance.new("ImageLabel", IntroFrame)
@@ -131,19 +139,18 @@ DropdownGui.ResetOnSpawn = false
 DropdownGui.DisplayOrder = 9999
 DropdownGui.Enabled = false
 
--- Thanh load chuẩn tuyến tính mượt mà, không bị tụt ngược về, thời gian đúng 4.3 giây
+-- Thanh load chuẩn mượt mà trong đúng 4.3 giây
 task.spawn(function()
     local hueTitle = 0
     local hueStroke = 0
     local elapsed = 0
-    const duration = 4.3
+    local duration = 4.3
     
     while elapsed < duration do
         local dt = task.wait(0.03)
         elapsed = elapsed + dt
         local alpha = math.clamp(elapsed / duration, 0, 1)
         
-        -- Hàm tăng tốc mượt mà (EaseOutCubic) giúp chạy tới đích 100% không bao giờ giật lùi
         local progressCurve = 1 - math.pow(1 - alpha, 3)
         local percent = math.clamp(math.floor(progressCurve * 100), 0, 100)
         
@@ -175,9 +182,16 @@ task.spawn(function()
         IntroSound:Destroy()
     end)
     
-    TweenService:Create(IntroFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
-    task.wait(0.3)
+    -- Hiệu ứng thu nhỏ (Scale down) và biến mất trước khi xóa hoàn toàn
+    TweenService:Create(IntroFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        BackgroundTransparency = 1
+    }):Play()
+    
+    task.wait(0.25)
     IntroGui:Destroy()
+    ParticleHolder:Destroy()
 end)
 
 local function InitializeKiyoHub()
