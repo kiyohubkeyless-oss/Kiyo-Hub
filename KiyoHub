@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Custom Mobile UI - Bounce Animation & Pure Select Player)
+-- Roblox Delta Script - KIYO HUB (Intro 5s, Clean Aimbot, Sub-Menu Animations, Close 'X' Buttons, Audio Separation)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -11,10 +11,134 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
-local function InitializeKiyoHub()
-    pcall(function()
+local ParentGui = (gethui and gethui()) or game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
+if ParentGui:FindFirstChild("KiyoHubCustomUI") then ParentGui.KiyoHubCustomUI:Destroy() end
+if ParentGui:FindFirstChild("KiyoHubDropdownGui") then ParentGui.KiyoHubDropdownGui:Destroy() end
+if ParentGui:FindFirstChild("KiyoHubIntroGui") then ParentGui.KiyoHubIntroGui:Destroy() end
+if ParentGui:FindFirstChild("KiyoHubUnloadGui") then ParentGui.KiyoHubUnloadGui:Destroy() end
 
 local Connections = {}
+
+local function PlayUISound(soundId, volume)
+    pcall(function()
+        local s = Instance.new("Sound")
+        s.SoundId = "rbxassetid://" .. tostring(soundId)
+        s.Volume = volume or 1
+        s.Parent = workspace
+        s:Play()
+        s.Ended:Connect(function()
+            s:Destroy()
+        end)
+    end)
+end
+
+-- ==================== INTRO LOADING SCREEN (5 GIÂY + NHẠC 4702564143 + ANIMATION) ====================
+local IntroGui = Instance.new("ScreenGui", ParentGui)
+IntroGui.Name = "KiyoHubIntroGui"
+IntroGui.ResetOnSpawn = false
+IntroGui.DisplayOrder = 10000
+
+local IntroSound = Instance.new("Sound")
+IntroSound.SoundId = "rbxassetid://4702564143"
+IntroSound.Volume = 2
+IntroSound.Parent = IntroGui
+pcall(function() IntroSound:Play() end)
+
+local IntroFrame = Instance.new("Frame", IntroGui)
+IntroFrame.Size = UDim2.new(0, 0, 0, 0)
+IntroFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+IntroFrame.BackgroundColor3 = Color3.fromRGB(12, 15, 20)
+IntroFrame.BorderSizePixel = 0
+IntroFrame.ClipsDescendants = true
+
+Instance.new("UICorner", IntroFrame).CornerRadius = UDim.new(0, 12)
+local IntroStroke = Instance.new("UIStroke", IntroFrame)
+IntroStroke.Color = Color3.fromRGB(40, 50, 65)
+IntroStroke.Thickness = 1.5
+
+local TitleIntro = Instance.new("TextLabel", IntroFrame)
+TitleIntro.Size = UDim2.new(1, 0, 0, 50)
+TitleIntro.Position = UDim2.new(0, 0, 0, 20)
+TitleIntro.BackgroundTransparency = 1
+TitleIntro.Text = "KiyoHub"
+TitleIntro.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleIntro.Font = Enum.Font.GothamBold
+TitleIntro.TextSize = 28
+
+local PercentLabel = Instance.new("TextLabel", IntroFrame)
+PercentLabel.Size = UDim2.new(1, 0, 0, 25)
+PercentLabel.Position = UDim2.new(0, 0, 0, 75)
+PercentLabel.BackgroundTransparency = 1
+PercentLabel.Text = "Loading... 0%"
+PercentLabel.TextColor3 = Color3.fromRGB(180, 190, 210)
+PercentLabel.Font = Enum.Font.GothamMedium
+PercentLabel.TextSize = 12
+
+local LoadBarBg = Instance.new("Frame", IntroFrame)
+LoadBarBg.Size = UDim2.new(0.85, 0, 0, 10)
+LoadBarBg.Position = UDim2.new(0.075, 0, 0, 115)
+LoadBarBg.BackgroundColor3 = Color3.fromRGB(20, 25, 33)
+LoadBarBg.BorderSizePixel = 0
+Instance.new("UICorner", LoadBarBg).CornerRadius = UDim.new(1, 0)
+
+local LoadBarFill = Instance.new("Frame", LoadBarBg)
+LoadBarFill.Size = UDim2.new(0, 0, 1, 0)
+LoadBarFill.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
+LoadBarFill.BorderSizePixel = 0
+Instance.new("UICorner", LoadBarFill).CornerRadius = UDim.new(1, 0)
+
+TweenService:Create(IntroFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 320, 0, 160),
+    Position = UDim2.new(0.5, -160, 0.5, -80)
+}):Play()
+
+local ScreenGui = Instance.new("ScreenGui", ParentGui)
+ScreenGui.Name = "KiyoHubCustomUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Enabled = false
+
+local DropdownGui = Instance.new("ScreenGui", ParentGui)
+DropdownGui.Name = "KiyoHubDropdownGui"
+DropdownGui.ResetOnSpawn = false
+DropdownGui.DisplayOrder = 9999
+DropdownGui.Enabled = false
+
+task.spawn(function()
+    local hueTitle = 0
+    local hueBar = 0
+    local progress = 0
+    -- Chạy trong vòng 5 giây (50 bước x 0.1s = 5 giây)
+    while progress < 100 do
+        progress = progress + 2
+        if progress > 100 then progress = 100 end
+        
+        PercentLabel.Text = "Loading... " .. math.floor(progress) .. "%"
+        LoadBarFill.Size = UDim2.new(progress / 100, 0, 1, 0)
+        
+        hueTitle = (hueTitle + 0.05) % 1
+        TitleIntro.TextColor3 = Color3.fromHSV(hueTitle, 0.9, 1)
+        
+        hueBar = (hueBar + 0.03) % 1
+        LoadBarFill.BackgroundColor3 = Color3.fromHSV(hueBar, 0.9, 1)
+        
+        task.wait(0.1)
+    end
+    
+    ScreenGui.Enabled = true
+    DropdownGui.Enabled = true
+    
+    pcall(function()
+        IntroSound:Stop()
+        IntroSound:Destroy()
+    end)
+    
+    TweenService:Create(IntroFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+    task.wait(0.25)
+    IntroGui:Destroy()
+end)
+
+local function InitializeKiyoHub()
+    pcall(function()
 
 local State = {
     InfJump = false,
@@ -64,7 +188,6 @@ local State = {
 }
 
 local TargetPlayer = nil
-local FlingTargetPlayer = nil
 local SpectateTarget = nil
 local CurrentSound = nil
 
@@ -84,13 +207,73 @@ local r6JointsData = {}
 local noclipEnabled = false
 local noclipConnection = nil
 
--- Hàm tạo hiệu ứng nảy (Bounce Elastic) cho nút bấm
+local function UnloadScript()
+    pcall(function()
+        for _, conn in ipairs(Connections) do
+            if conn and typeof(conn) == "RBXScriptConnection" then
+                conn:Disconnect()
+            end
+        end
+        Connections = {}
+        
+        if workspace:FindFirstChild("AirWalkPlatform") then
+            workspace.AirWalkPlatform:Destroy()
+        end
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character.Humanoid.PlatformStand = false
+            Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        end
+        workspace.Gravity = 196.2
+        
+        if ParentGui:FindFirstChild("KiyoHubCustomUI") then ParentGui.KiyoHubCustomUI:Destroy() end
+        if ParentGui:FindFirstChild("KiyoHubDropdownGui") then ParentGui.KiyoHubDropdownGui:Destroy() end
+        if ParentGui:FindFirstChild("KiyoHubIntroGui") then ParentGui.KiyoHubIntroGui:Destroy() end
+        if ParentGui:FindFirstChild("KiyoHubUnloadGui") then ParentGui.KiyoHubUnloadGui:Destroy() end
+    end)
+end
+
+local function setupDeathSound(char)
+    pcall(function()
+        local hum = char:WaitForChild("Humanoid", 5)
+        if hum then
+            table.insert(Connections, hum.Died:Connect(function()
+                pcall(function()
+                    local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
+                    if hrp then
+                        local deathSound = Instance.new("Sound")
+                        deathSound.SoundId = "rbxassetid://8449305114"
+                        deathSound.Volume = 3
+                        deathSound.Parent = hrp
+                        deathSound:Play()
+                        deathSound.Ended:Connect(function()
+                            deathSound:Destroy()
+                        end)
+                    end
+                end)
+            end))
+        end
+    end)
+end
+
+if LocalPlayer.Character then
+    setupDeathSound(LocalPlayer.Character)
+end
+table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(newChar)
+    task.wait(0.5)
+    setupDeathSound(newChar)
+end))
+
 local function AddBounceEffect(button, originalSize)
     button.MouseButton1Down:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset - 4, originalSize.Y.Scale, originalSize.Y.Offset - 4)}):Play()
+        PlayUISound(452267918, 1) -- Âm thanh bấm nút chung (452267918)
+        pcall(function()
+            TweenService:Create(button, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset - 2, originalSize.Y.Scale, originalSize.Y.Offset - 2)}):Play()
+        end)
     end)
     button.MouseButton1Up:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = originalSize}):Play()
+        pcall(function()
+            TweenService:Create(button, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = originalSize}):Play()
+        end)
     end)
 end
 
@@ -173,7 +356,6 @@ local function applyRagdoll(char, enable)
     end)
 end
 
--- LOGIC FART
 local function executeFart()
     pcall(function()
         local char = LocalPlayer.Character
@@ -220,7 +402,6 @@ local function executeFart()
     end)
 end
 
--- THUẬT TOÁN KILASIK FLING (SKIDFLING)
 local function SkidFling(TargetPlayer)
     local Character = LocalPlayer.Character
     local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
@@ -521,21 +702,6 @@ local function applyFixLag(enable)
     end)
 end
 
--- ==================== SCREEN GUI VÀ HIỆU ỨNG BOUNCE NẢY ĐỈNH CAO ====================
-local ParentGui = (gethui and gethui()) or game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
-if ParentGui:FindFirstChild("KiyoHubCustomUI") then ParentGui.KiyoHubCustomUI:Destroy() end
-if ParentGui:FindFirstChild("KiyoHubDropdownGui") then ParentGui.KiyoHubDropdownGui:Destroy() end
-
-local ScreenGui = Instance.new("ScreenGui", ParentGui)
-ScreenGui.Name = "KiyoHubCustomUI"
-ScreenGui.ResetOnSpawn = false
-
-local DropdownGui = Instance.new("ScreenGui", ParentGui)
-DropdownGui.Name = "KiyoHubDropdownGui"
-DropdownGui.ResetOnSpawn = false
-DropdownGui.DisplayOrder = 9999
-
--- Nút Logo Nổi (Có độ nảy mượt mà Elastic khi bấm)
 local FloatButton = Instance.new("ImageButton", ScreenGui)
 FloatButton.Name = "FloatButton"
 FloatButton.Size = UDim2.new(0, 42, 0, 42)
@@ -553,14 +719,14 @@ FloatStroke.Color = Color3.fromRGB(35, 42, 55)
 FloatStroke.Thickness = 1.5
 
 FloatButton.MouseButton1Down:Connect(function()
-    TweenService:Create(FloatButton, TweenInfo.new(0.12, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 36, 0, 36)}):Play()
+    PlayUISound(452267918, 1)
+    TweenService:Create(FloatButton, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 36, 0, 36)}):Play()
 end)
 
 FloatButton.MouseButton1Up:Connect(function()
-    TweenService:Create(FloatButton, TweenInfo.new(0.25, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {Size = UDim2.new(0, 42, 0, 42)}):Play()
+    TweenService:Create(FloatButton, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 42, 0, 42)}):Play()
 end)
 
--- Cửa sổ chính
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 430, 0, 260)
@@ -579,7 +745,6 @@ local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Color = Color3.fromRGB(30, 36, 48)
 MainStroke.Thickness = 1.5
 
--- Thanh tiêu đề
 local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Size = UDim2.new(1, 0, 0, 36)
 TopBar.BackgroundColor3 = Color3.fromRGB(17, 21, 28)
@@ -604,6 +769,75 @@ TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 13
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+local UnloadGui = Instance.new("ScreenGui", ParentGui)
+UnloadGui.Name = "KiyoHubUnloadGui"
+UnloadGui.ResetOnSpawn = false
+UnloadGui.DisplayOrder = 10001
+UnloadGui.Enabled = false
+
+local UnloadOverlay = Instance.new("Frame", UnloadGui)
+UnloadOverlay.Size = UDim2.new(1, 0, 1, 0)
+UnloadOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UnloadOverlay.BackgroundTransparency = 0.5
+
+local UnloadDialog = Instance.new("Frame", UnloadGui)
+UnloadDialog.Size = UDim2.new(0, 280, 0, 130)
+UnloadDialog.Position = UDim2.new(0.5, -140, 0.5, -65)
+UnloadDialog.BackgroundColor3 = Color3.fromRGB(15, 20, 28)
+UnloadDialog.BorderSizePixel = 0
+Instance.new("UICorner", UnloadDialog).CornerRadius = UDim.new(0, 10)
+local DialogStroke = Instance.new("UIStroke", UnloadDialog)
+DialogStroke.Color = Color3.fromRGB(45, 55, 70)
+DialogStroke.Thickness = 1.5
+
+local DialogTitle = Instance.new("TextLabel", UnloadDialog)
+DialogTitle.Size = UDim2.new(1, 0, 0, 40)
+DialogTitle.Position = UDim2.new(0, 0, 0, 15)
+DialogTitle.BackgroundTransparency = 1
+DialogTitle.Text = "Are you sure?"
+DialogTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+DialogTitle.Font = Enum.Font.GothamBold
+DialogTitle.TextSize = 18
+
+local DialogSub = Instance.new("TextLabel", UnloadDialog)
+DialogSub.Size = UDim2.new(1, 0, 0, 20)
+DialogSub.Position = UDim2.new(0, 0, 0, 45)
+DialogSub.BackgroundTransparency = 1
+DialogSub.Text = "Do you want to unload KiyoHub completely?"
+DialogSub.TextColor3 = Color3.fromRGB(160, 175, 200)
+DialogSub.Font = Enum.Font.Gotham
+DialogSub.TextSize = 11
+
+local YesBtn = Instance.new("TextButton", UnloadDialog)
+YesBtn.Size = UDim2.new(0, 115, 0, 32)
+YesBtn.Position = UDim2.new(0, 18, 1, -45)
+YesBtn.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
+YesBtn.Text = "Yes (Unload)"
+YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+YesBtn.Font = Enum.Font.GothamBold
+YesBtn.TextSize = 11
+Instance.new("UICorner", YesBtn).CornerRadius = UDim.new(0, 6)
+AddBounceEffect(YesBtn, UDim2.new(0, 115, 0, 32))
+
+local NoBtn = Instance.new("TextButton", UnloadDialog)
+NoBtn.Size = UDim2.new(0, 115, 0, 32)
+NoBtn.Position = UDim2.new(1, -133, 1, -45)
+NoBtn.BackgroundColor3 = Color3.fromRGB(35, 45, 60)
+NoBtn.Text = "No"
+NoBtn.TextColor3 = Color3.fromRGB(220, 230, 250)
+NoBtn.Font = Enum.Font.GothamBold
+NoBtn.TextSize = 11
+Instance.new("UICorner", NoBtn).CornerRadius = UDim.new(0, 6)
+AddBounceEffect(NoBtn, UDim2.new(0, 115, 0, 32))
+
+NoBtn.MouseButton1Click:Connect(function()
+    UnloadGui.Enabled = false
+end)
+
+YesBtn.MouseButton1Click:Connect(function()
+    UnloadScript()
+end)
+
 local CloseBtn = Instance.new("TextButton", TopBar)
 CloseBtn.Size = UDim2.new(0, 26, 0, 26)
 CloseBtn.Position = UDim2.new(1, -30, 0.5, -13)
@@ -616,29 +850,24 @@ Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 AddBounceEffect(CloseBtn, UDim2.new(0, 26, 0, 26))
 
 CloseBtn.MouseButton1Click:Connect(function()
-    TweenService:Create(MainFrame, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}):Play()
-    task.delay(0.22, function()
-        MainFrame.Visible = false
-        MainFrame.Size = UDim2.new(0, 430, 0, 260)
-        MainFrame.BackgroundTransparency = 0
-    end)
+    MainFrame.Visible = false
+    UnloadGui.Enabled = true
 end)
 
 FloatButton.MouseButton1Click:Connect(function()
     if not MainFrame.Visible then
         MainFrame.Size = UDim2.new(0, 0, 0, 0)
         MainFrame.Visible = true
-        TweenService:Create(MainFrame, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 430, 0, 260)}):Play()
+        TweenService:Create(MainFrame, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 430, 0, 260)}):Play()
     else
-        TweenService:Create(MainFrame, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
-        task.delay(0.22, function()
+        TweenService:Create(MainFrame, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+        task.delay(0.12, function()
             MainFrame.Visible = false
             MainFrame.Size = UDim2.new(0, 430, 0, 260)
         end)
     end
 end)
 
--- Thanh Tabs bên trái
 local TabListFrame = Instance.new("ScrollingFrame", MainFrame)
 TabListFrame.Size = UDim2.new(0, 110, 1, -40)
 TabListFrame.Position = UDim2.new(0, 0, 0, 40)
@@ -650,7 +879,6 @@ local UIListLayoutTabs = Instance.new("UIListLayout", TabListFrame)
 UIListLayoutTabs.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayoutTabs.Padding = UDim.new(0, 4)
 
--- Khu vực chứa nội dung các Tab bên phải
 local ContainerHolder = Instance.new("Frame", MainFrame)
 ContainerHolder.Size = UDim2.new(1, -115, 1, -42)
 ContainerHolder.Position = UDim2.new(0, 115, 0, 40)
@@ -658,6 +886,20 @@ ContainerHolder.BackgroundTransparency = 1
 
 local Tabs = {}
 local activeTab = nil
+
+local function ToggleSubMenuAnimation(menuFrame, show)
+    if show then
+        menuFrame.Size = UDim2.new(0, 0, 0, 0)
+        menuFrame.Visible = true
+        local targetSize = (menuFrame.Name:sub(1, 10) == "PlayerMenu") and UDim2.new(0, 200, 0, 180) or UDim2.new(0, 160, 0, 130)
+        TweenService:Create(menuFrame, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = targetSize}):Play()
+    else
+        TweenService:Create(menuFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+        task.delay(0.15, function()
+            menuFrame.Visible = false
+        end)
+    end
+end
 
 local function CreateTab(name)
     local tabScroll = Instance.new("ScrollingFrame", ContainerHolder)
@@ -734,7 +976,17 @@ local function CreateTab(name)
         toggleBtn.BackgroundColor3 = Color3.fromRGB(35, 42, 55)
         toggleBtn.Text = ""
         Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
-        AddBounceEffect(toggleBtn, UDim2.new(0, 32, 0, 18))
+        
+        toggleBtn.MouseButton1Down:Connect(function()
+            pcall(function()
+                TweenService:Create(toggleBtn, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 28, 0, 14)}):Play()
+            end)
+        end)
+        toggleBtn.MouseButton1Up:Connect(function()
+            pcall(function()
+                TweenService:Create(toggleBtn, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 32, 0, 18)}):Play()
+            end)
+        end)
         
         local circle = Instance.new("Frame", toggleBtn)
         circle.Size = UDim2.new(0, 14, 0, 14)
@@ -745,12 +997,13 @@ local function CreateTab(name)
         local toggled = data.CurrentValue or false
         local function updateToggle(val)
             toggled = val
+            PlayUISound(226892749, 1) -- ĐÚNG CHUẨN ÂM THANH BẬT/TẮT TÍNH NĂNG (ID 226892749)
             if toggled then
                 toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
-                circle:TweenPosition(UDim2.new(1, -16, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+                circle:TweenPosition(UDim2.new(1, -16, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
             else
                 toggleBtn.BackgroundColor3 = Color3.fromRGB(35, 42, 55)
-                circle:TweenPosition(UDim2.new(0, 2, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+                circle:TweenPosition(UDim2.new(0, 2, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
             end
             if data.Callback then pcall(function() data.Callback(toggled) end) end
         end
@@ -798,7 +1051,120 @@ local function CreateTab(name)
         end)
     end
     
-    -- ==================== MENU SELECT PLAYER (LỌC BỎ TÊN BẢN THÂN + TIÊU ĐỀ SELECT PLAYER) ====================
+    function api:CreateDropdown(data)
+        local frame = Instance.new("Frame", tabScroll)
+        frame.Size = UDim2.new(1, -8, 0, 30)
+        frame.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+        
+        local stroke = Instance.new("UIStroke", frame)
+        stroke.Color = Color3.fromRGB(30, 36, 48)
+        stroke.Thickness = 1
+        
+        local label = Instance.new("TextLabel", frame)
+        label.Size = UDim2.new(0.4, 0, 1, 0)
+        label.Position = UDim2.new(0, 8, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Text = data.Name
+        label.TextColor3 = Color3.fromRGB(210, 220, 235)
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 11
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local dropdownBtn = Instance.new("TextButton", frame)
+        dropdownBtn.Size = UDim2.new(0.55, 0, 0, 20)
+        dropdownBtn.Position = UDim2.new(0.43, 0, 0.5, -10)
+        dropdownBtn.BackgroundColor3 = Color3.fromRGB(24, 30, 40)
+        dropdownBtn.Text = data.CurrentOption or "Default"
+        dropdownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        dropdownBtn.Font = Enum.Font.Gotham
+        dropdownBtn.TextSize = 10
+        Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 4)
+        AddBounceEffect(dropdownBtn, UDim2.new(0.55, 0, 0, 20))
+
+        local OptMenu = Instance.new("Frame", DropdownGui)
+        OptMenu.Name = "OptMenu_" .. math.random(1000, 9999)
+        OptMenu.Size = UDim2.new(0, 0, 0, 0)
+        OptMenu.Position = UDim2.new(0.5, -80, 0.5, -65)
+        OptMenu.BackgroundColor3 = Color3.fromRGB(14, 18, 25)
+        OptMenu.Visible = false
+        OptMenu.Active = true
+        OptMenu.Draggable = true
+        OptMenu.ClipsDescendants = true
+
+        Instance.new("UICorner", OptMenu).CornerRadius = UDim.new(0, 8)
+        local menuStroke = Instance.new("UIStroke", OptMenu)
+        menuStroke.Color = Color3.fromRGB(50, 60, 75)
+        menuStroke.Thickness = 1.5
+
+        local menuTitle = Instance.new("TextLabel", OptMenu)
+        menuTitle.Size = UDim2.new(1, -30, 0, 28)
+        menuTitle.Position = UDim2.new(0, 6, 0, 0)
+        menuTitle.BackgroundTransparency = 1
+        menuTitle.Text = data.Name
+        menuTitle.TextColor3 = Color3.fromRGB(210, 220, 235)
+        menuTitle.Font = Enum.Font.GothamBold
+        menuTitle.TextSize = 11
+        menuTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+        local subCloseBtn = Instance.new("TextButton", OptMenu)
+        subCloseBtn.Size = UDim2.new(0, 20, 0, 20)
+        subCloseBtn.Position = UDim2.new(1, -24, 0, 4)
+        subCloseBtn.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
+        subCloseBtn.Text = "X"
+        subCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        subCloseBtn.Font = Enum.Font.GothamBold
+        subCloseBtn.TextSize = 9
+        Instance.new("UICorner", subCloseBtn).CornerRadius = UDim.new(0, 4)
+        AddBounceEffect(subCloseBtn, UDim2.new(0, 20, 0, 20))
+
+        subCloseBtn.MouseButton1Click:Connect(function()
+            ToggleSubMenuAnimation(OptMenu, false)
+        end)
+
+        local scrollList = Instance.new("ScrollingFrame", OptMenu)
+        scrollList.Size = UDim2.new(1, -8, 1, -34)
+        scrollList.Position = UDim2.new(0, 4, 0, 30)
+        scrollList.BackgroundTransparency = 1
+        scrollList.CanvasSize = UDim2.new(0, 0, 0, 0)
+        scrollList.ScrollBarThickness = 4
+
+        local layoutList = Instance.new("UIListLayout", scrollList)
+        layoutList.SortOrder = Enum.SortOrder.LayoutOrder
+        layoutList.Padding = UDim.new(0, 4)
+
+        layoutList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            scrollList.CanvasSize = UDim2.new(0, 0, 0, layoutList.AbsoluteContentSize.Y + 8)
+        end)
+
+        for _, optName in ipairs(data.Options or {}) do
+            local optBtn = Instance.new("TextButton", scrollList)
+            optBtn.Size = UDim2.new(1, -4, 0, 26)
+            optBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 33)
+            optBtn.Text = tostring(optName)
+            optBtn.TextColor3 = Color3.fromRGB(240, 245, 255)
+            optBtn.Font = Enum.Font.GothamMedium
+            optBtn.TextSize = 10
+            Instance.new("UICorner", optBtn).CornerRadius = UDim.new(0, 5)
+            AddBounceEffect(optBtn, UDim2.new(1, -4, 0, 26))
+            
+            optBtn.MouseButton1Click:Connect(function()
+                PlayUISound(226892749, 1) -- ĐÚNG CHUẨN ÂM THANH CHỌN TÙY CHỌN (ID 226892749)
+                dropdownBtn.Text = tostring(optName)
+                ToggleSubMenuAnimation(OptMenu, false)
+                if data.Callback then pcall(function() data.Callback(optName) end) end
+            end)
+        end
+
+        dropdownBtn.MouseButton1Click:Connect(function()
+            if not OptMenu.Visible then
+                ToggleSubMenuAnimation(OptMenu, true)
+            else
+                ToggleSubMenuAnimation(OptMenu, false)
+            end
+        end)
+    end
+    
     function api:CreatePlayerDropdown(data)
         local frame = Instance.new("Frame", tabScroll)
         frame.Size = UDim2.new(1, -8, 0, 30)
@@ -832,12 +1198,13 @@ local function CreateTab(name)
 
         local PlayerMenu = Instance.new("Frame", DropdownGui)
         PlayerMenu.Name = "PlayerMenu_" .. math.random(1000, 9999)
-        PlayerMenu.Size = UDim2.new(0, 200, 0, 180)
+        PlayerMenu.Size = UDim2.new(0, 0, 0, 0)
         PlayerMenu.Position = UDim2.new(0.5, -100, 0.5, -90)
         PlayerMenu.BackgroundColor3 = Color3.fromRGB(14, 18, 25)
         PlayerMenu.Visible = false
         PlayerMenu.Active = true
         PlayerMenu.Draggable = true
+        PlayerMenu.ClipsDescendants = true
 
         Instance.new("UICorner", PlayerMenu).CornerRadius = UDim.new(0, 8)
         local menuStroke = Instance.new("UIStroke", PlayerMenu)
@@ -845,12 +1212,29 @@ local function CreateTab(name)
         menuStroke.Thickness = 1.5
 
         local menuTitle = Instance.new("TextLabel", PlayerMenu)
-        menuTitle.Size = UDim2.new(1, 0, 0, 28)
+        menuTitle.Size = UDim2.new(1, -30, 0, 28)
+        menuTitle.Position = UDim2.new(0, 6, 0, 0)
         menuTitle.BackgroundTransparency = 1
-        menuTitle.Text = "Select Player" -- Sửa tên tiêu đề theo yêu cầu
+        menuTitle.Text = "Select Player"
         menuTitle.TextColor3 = Color3.fromRGB(210, 220, 235)
         menuTitle.Font = Enum.Font.GothamBold
         menuTitle.TextSize = 11
+        menuTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+        local subCloseBtn = Instance.new("TextButton", PlayerMenu)
+        subCloseBtn.Size = UDim2.new(0, 20, 0, 20)
+        subCloseBtn.Position = UDim2.new(1, -24, 0, 4)
+        subCloseBtn.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
+        subCloseBtn.Text = "X"
+        subCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        subCloseBtn.Font = Enum.Font.GothamBold
+        subCloseBtn.TextSize = 9
+        Instance.new("UICorner", subCloseBtn).CornerRadius = UDim.new(0, 4)
+        AddBounceEffect(subCloseBtn, UDim2.new(0, 20, 0, 20))
+
+        subCloseBtn.MouseButton1Click:Connect(function()
+            ToggleSubMenuAnimation(PlayerMenu, false)
+        end)
 
         local scrollList = Instance.new("ScrollingFrame", PlayerMenu)
         scrollList.Size = UDim2.new(1, -8, 1, -34)
@@ -872,7 +1256,6 @@ local function CreateTab(name)
                 if c:IsA("TextButton") then c:Destroy() end
             end
             
-            -- Option "None"
             local noneBtn = Instance.new("TextButton", scrollList)
             noneBtn.Size = UDim2.new(1, -4, 0, 26)
             noneBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 33)
@@ -883,12 +1266,12 @@ local function CreateTab(name)
             Instance.new("UICorner", noneBtn).CornerRadius = UDim.new(0, 5)
             AddBounceEffect(noneBtn, UDim2.new(1, -4, 0, 26))
             noneBtn.MouseButton1Click:Connect(function()
+                PlayUISound(226892749, 1) -- ĐÚNG CHUẨN ÂM THANH CHỌN NGƯỜI CHƠI (ID 226892749)
                 dropdownBtn.Text = "None"
-                PlayerMenu.Visible = false
+                ToggleSubMenuAnimation(PlayerMenu, false)
                 if data.Callback then pcall(function() data.Callback("None") end) end
             end)
 
-            -- Danh sách Display Name (Loại trừ tuyệt đối tên của bản thân)
             for _, p in pairs(Players:GetPlayers()) do
                 if p and p ~= LocalPlayer then
                     local pBtn = Instance.new("TextButton", scrollList)
@@ -902,8 +1285,9 @@ local function CreateTab(name)
                     AddBounceEffect(pBtn, UDim2.new(1, -4, 0, 26))
                     
                     pBtn.MouseButton1Click:Connect(function()
+                        PlayUISound(226892749, 1) -- ĐÚNG CHUẨN ÂM THANH CHỌN NGƯỜI CHƠI (ID 226892749)
                         dropdownBtn.Text = p.DisplayName ~= "" and p.DisplayName or p.Name
-                        PlayerMenu.Visible = false
+                        ToggleSubMenuAnimation(PlayerMenu, false)
                         if data.Callback then pcall(function() data.Callback(p.DisplayName ~= "" and p.DisplayName or p.Name) end) end
                     end)
                 end
@@ -911,17 +1295,13 @@ local function CreateTab(name)
         end
 
         dropdownBtn.MouseButton1Click:Connect(function()
-            populateList()
-            PlayerMenu.Visible = not PlayerMenu.Visible
+            if not PlayerMenu.Visible then
+                populateList()
+                ToggleSubMenuAnimation(PlayerMenu, true)
+            else
+                ToggleSubMenuAnimation(PlayerMenu, false)
+            end
         end)
-
-        local dropdownAPI = {}
-        function dropdownAPI:Refresh(newOpts) end
-        return dropdownAPI
-    end
-
-    function api:CreateDropdown(data)
-        return api:CreatePlayerDropdown(data)
     end
     
     function api:CreateButton(data)
@@ -965,7 +1345,6 @@ local SpectateTab = CreateTab("Spectate")
 local ServerTab = CreateTab("Server")
 local InfoTab = CreateTab("Info")
 
--- Nút nổi mini phụ trợ trên màn hình mobile (Thêm hiệu ứng nảy Elastic)
 local function createSubButton(name, text, pos, size)
     local btnSize = size or UDim2.new(0, 36, 0, 36)
     local btn = Instance.new("TextButton", ScreenGui)
@@ -1230,7 +1609,6 @@ local function applyXRay(enable)
     end)
 end
 
--- ==================== LIÊN KẾT GIAO DIỆN VỚI TÍNH NĂNG ====================
 MainTab:CreateToggle({
     Name = "Fly",
     CurrentValue = false,
@@ -1373,7 +1751,7 @@ VisualTab:CreateDropdown({
             elseif choice == "Night" then 
                 Lighting.ClockTime, Lighting.Brightness = 0, 0.5
             else 
-                Lighting.ClockTime, Lighting.Brightness = 14, OriginalLighting.Brightness 
+                Lighting.ClockTime, Lighting.Brightness = OriginalLighting.ClockTime, OriginalLighting.Brightness
             end
         end)
     end
@@ -1549,7 +1927,7 @@ SpectateTab:CreateToggle({
     end
 })
 
--- Teleport Tab (Loop People & Fling)
+-- Loop People
 TeleportTab:CreatePlayerDropdown({
     Name = "Loop People (Target)",
     CurrentOption = "None",
@@ -1570,23 +1948,16 @@ TeleportTab:CreatePlayerDropdown({
 })
 
 TeleportTab:CreateButton({
-    Name = "Start Loop People",
+    Name = "Start/Stop Loop People",
     Callback = function()
         if TargetPlayer then
-            State.LoopPeopleActive = true
-            State.LoopPeople = true
+            State.LoopPeopleActive = not State.LoopPeopleActive
+            State.LoopPeople = State.LoopPeopleActive
         end
     end
 })
 
-TeleportTab:CreateButton({
-    Name = "Stop Loop People",
-    Callback = function()
-        State.LoopPeopleActive = false
-        State.LoopPeople = false
-    end
-})
-
+-- Fling Control
 TeleportTab:CreateSection("Fling Control")
 
 TeleportTab:CreatePlayerDropdown({
@@ -1605,34 +1976,23 @@ TeleportTab:CreatePlayerDropdown({
 })
 
 TeleportTab:CreateButton({
-    Name = "Start Fling",
+    Name = "Start/Stop Fling",
     Callback = function()
-        if FlingActive then return end
-        local count = 0
-        for _ in pairs(FlingTargets) do count = count + 1 end
-        if count == 0 then return end
-        
-        FlingActive = true
-        task.spawn(function()
-            while FlingActive do
-                local validTargets = {}
-                for name, player in pairs(FlingTargets) do
-                    if player and player.Parent then validTargets[name] = player else FlingTargets[name] = nil end
+        FlingActive = not FlingActive
+        if FlingActive then
+            task.spawn(function()
+                while FlingActive do
+                    local validTargets = {}
+                    for name, player in pairs(FlingTargets) do
+                        if player and player.Parent then validTargets[name] = player else FlingTargets[name] = nil end
+                    end
+                    for _, player in pairs(validTargets) do
+                        if FlingActive then SkidFling(player) task.wait(0.1) else break end
+                    end
+                    task.wait(0.5)
                 end
-                for _, player in pairs(validTargets) do
-                    if FlingActive then SkidFling(player) task.wait(0.1) else break end
-                end
-                task.wait(0.5)
-            end
-        end)
-    end
-})
-
-TeleportTab:CreateButton({
-    Name = "Stop Fling",
-    Callback = function()
-        if not FlingActive then return end
-        FlingActive = false
+            end)
+        end
     end
 })
 
@@ -1766,7 +2126,7 @@ end)
 
 task.spawn(function()
     while true do
-        task.wait(0.02)
+        task.wait(0.01)
         pcall(function()
             if State.TeleportAll then
                 pcall(function()
@@ -1779,7 +2139,7 @@ task.spawn(function()
                                 local targetHum = p.Character:FindFirstChildOfClass("Humanoid")
                                 if targetHrp and targetHum and targetHum.Health > 0 then
                                     hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 3, 0)
-                                    task.wait(0.02)
+                                    task.wait(0.01)
                                 end
                             end
                             if not State.TeleportAll then break end
@@ -1797,13 +2157,6 @@ local loopTimer = 0
 local espUpdateTimer = 0
 local antiTouchTimer = 0
 
-local function isMM2()
-    local success, result = pcall(function()
-        return game.PlaceId == 142823291 or workspace:FindFirstChild("GunDrop") ~= nil or LocalPlayer.Backpack:FindFirstChild("Revolver") or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Revolver"))
-    end)
-    return success and result or false
-end
-
 local function getClosestPlayerToHead()
     local closestPlayer = nil
     local shortestDistance = math.huge
@@ -1811,11 +2164,6 @@ local function getClosestPlayerToHead()
         local myChar = LocalPlayer.Character
         if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
         local myHrp = myChar.HumanoidRootPart
-        
-        local successMM2, isSheriffOrHero = pcall(function()
-            return isMM2() and (myChar:FindFirstChild("Revolver") or LocalPlayer.Backpack:FindFirstChild("Revolver"))
-        end)
-        if not successMM2 then isSheriffOrHero = false end
 
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
@@ -1823,28 +2171,18 @@ local function getClosestPlayerToHead()
                 local head = p.Character:FindFirstChild("Head")
                 
                 if hum and hum.Health > 0 and head then
-                    local isValid = true
-                    if isSheriffOrHero then
-                        local hasKnife = p.Character:FindFirstChild("Knife") or p.Backpack:FindFirstChild("Knife")
-                        if not hasKnife then isValid = false end
-                    else
-                        if p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team and p.Team.Name ~= "Neutral" then isValid = false end
-                    end
+                    local rayParams = RaycastParams.new()
+                    rayParams.FilterType = Enum.RaycastFilterType.Exclude
+                    rayParams.FilterDescendantsInstances = {myChar, p.Character}
+                    rayParams.IgnoreWater = true
                     
-                    if isValid then
-                        local rayParams = RaycastParams.new()
-                        rayParams.FilterType = Enum.RaycastFilterType.Exclude
-                        rayParams.FilterDescendantsInstances = {myChar, p.Character}
-                        rayParams.IgnoreWater = true
-                        
-                        local origin = Camera.CFrame.Position
-                        local direction = head.Position - origin
-                        local rayResult = workspace:Raycast(origin, direction, rayParams)
-                        
-                        if not rayResult then
-                            local dist = (head.Position - myHrp.Position).Magnitude
-                            if dist < shortestDistance then shortestDistance = dist closestPlayer = p end
-                        end
+                    local origin = Camera.CFrame.Position
+                    local direction = head.Position - origin
+                    local rayResult = workspace:Raycast(origin, direction, rayParams)
+                    
+                    if not rayResult then
+                        local dist = (head.Position - myHrp.Position).Magnitude
+                        if dist < shortestDistance then shortestDistance = dist closestPlayer = p end
                     end
                 end
             end
@@ -2044,7 +2382,7 @@ table.insert(Connections, RunService.Stepped:Connect(function(delta)
                             for _, otherPlayer in pairs(Players:GetPlayers()) do
                                 if otherPlayer ~= LocalPlayer and otherPlayer.Character then
                                     local otherHrp = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                                    if hrp and otherHrp and (hrp.Position - otherHrp.Position).Magnitude < 40 then
+                                    if hrp and otherHpr and (hrp.Position - otherHrp.Position).Magnitude < 40 then
                                         for _, part in pairs(otherPlayer.Character:GetDescendants()) do if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end end
                                     end
                                 end
