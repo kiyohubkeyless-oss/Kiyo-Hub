@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + 2D Floating White Particles, Smooth Scale-Down, Zero Lag, Audio Separation)
+-- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Sharp Bright Floating Particles, Smooth Scale-Down, Zero Lag, Audio Separation)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -32,7 +32,7 @@ local function PlayUISound(soundId, volume)
     end)
 end
 
--- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + HẠT TRẮNG UI BAY BAY) ====================
+-- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + HẠT NHỎ SÁNG RÕ NÉT) ====================
 local IntroGui = Instance.new("ScreenGui", ParentGui)
 IntroGui.Name = "KiyoHubIntroGui"
 IntroGui.ResetOnSpawn = false
@@ -44,37 +44,46 @@ IntroSound.Volume = 2
 IntroSound.Parent = IntroGui
 pcall(function() IntroSound:Play() end)
 
--- Container chứa các hạt trắng bay lơ lửng ngoài khung Intro
+-- Container chứa các hạt trắng nhỏ nhưng cực kỳ sắc nét và sáng rõ
 local ParticleContainer = Instance.new("Folder", IntroGui)
 ParticleContainer.Name = "IntroParticles"
 
 local isIntroActive = true
 
--- Tạo hiệu ứng hạt trắng bay chậm, mượt mà, tự hủy không gây lag
+-- Tạo hiệu ứng hạt nhỏ tinh tế nhưng sáng rực, không làm tăng kích thước thô
 task.spawn(function()
     while isIntroActive do
-        task.wait(0.2)
+        task.wait(0.12)
         if not isIntroActive then break end
         pcall(function()
             local particle = Instance.new("Frame", ParticleContainer)
-            local size = math.random(4, 8)
+            local size = math.random(4, 6) -- Giữ kích thước nhỏ gọn, tinh tế
             particle.Size = UDim2.new(0, size, 0, size)
             
-            -- Random vị trí xuất hiện ở nửa màn hình xung quanh tâm
-            local startX = math.random(20, 80) / 100
-            particle.Position = UDim2.new(startX, math.random(-80, 80), 1.1, 0)
-            particle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            particle.BackgroundTransparency = math.random(30, 60) / 100
+            local startX = math.random(15, 85) / 100
+            particle.Position = UDim2.new(startX, math.random(-100, 100), 1.15, 0)
+            particle.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Trắng tinh khiết tuyệt đối
+            particle.BackgroundTransparency = 0.05 -- Cực rõ, gần như không mờ
             particle.BorderSizePixel = 0
             
             Instance.new("UICorner", particle).CornerRadius = UDim.new(1, 0)
             
-            local targetY = math.random(-20, 20) / 100
-            local duration = math.random(25, 38) / 10
+            -- Thêm UIStroke để hạt có viền sáng sắc nét, nổi bật trên nền tối
+            local pStroke = Instance.new("UIStroke", particle)
+            pStroke.Color = Color3.fromRGB(255, 255, 255)
+            pStroke.Transparency = 0.1
+            pStroke.Thickness = 1.2
+            
+            local targetY = math.random(-25, 25) / 100
+            local duration = math.random(22, 35) / 10
             
             TweenService:Create(particle, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
-                Position = UDim2.new(startX, math.random(-120, 120), targetY, 0),
+                Position = UDim2.new(startX, math.random(-150, 150), targetY, 0),
                 BackgroundTransparency = 1
+            }):Play()
+            
+            TweenService:Create(pStroke, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+                Transparency = 1
             }):Play()
             
             task.delay(duration, function()
