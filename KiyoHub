@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Aimbot Logic Cleaned, Sub-Menu Animations, Close 'X' Buttons, Audio Separation)
+-- Roblox Delta Script - KIYO HUB (Intro 4.3s Pro Design, Dynamic Loading Curve, Sub-Menu Animations, Audio Separation)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -32,7 +32,7 @@ local function PlayUISound(soundId, volume)
     end)
 end
 
--- ==================== INTRO LOADING SCREEN (4 GIÂY + NHẠC 4702564143 + ANIMATION) ====================
+-- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + PRO UI) ====================
 local IntroGui = Instance.new("ScreenGui", ParentGui)
 IntroGui.Name = "KiyoHubIntroGui"
 IntroGui.ResetOnSpawn = false
@@ -47,37 +47,54 @@ pcall(function() IntroSound:Play() end)
 local IntroFrame = Instance.new("Frame", IntroGui)
 IntroFrame.Size = UDim2.new(0, 0, 0, 0)
 IntroFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-IntroFrame.BackgroundColor3 = Color3.fromRGB(12, 15, 20)
+IntroFrame.BackgroundColor3 = Color3.fromRGB(10, 13, 18)
 IntroFrame.BorderSizePixel = 0
 IntroFrame.ClipsDescendants = true
 
-Instance.new("UICorner", IntroFrame).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", IntroFrame).CornerRadius = UDim.new(0, 14)
 local IntroStroke = Instance.new("UIStroke", IntroFrame)
-IntroStroke.Color = Color3.fromRGB(40, 50, 65)
-IntroStroke.Thickness = 1.5
+IntroStroke.Color = Color3.fromRGB(45, 60, 85)
+IntroStroke.Thickness = 1.8
+
+-- Logo Icon nhỏ trong Intro
+local IntroLogo = Instance.new("ImageLabel", IntroFrame)
+IntroLogo.Size = UDim2.new(0, 36, 0, 36)
+IntroLogo.Position = UDim2.new(0.5, -18, 0, 18)
+IntroLogo.BackgroundTransparency = 1
+IntroLogo.Image = "rbxassetid://11778372908"
 
 local TitleIntro = Instance.new("TextLabel", IntroFrame)
-TitleIntro.Size = UDim2.new(1, 0, 0, 50)
-TitleIntro.Position = UDim2.new(0, 0, 0, 20)
+TitleIntro.Size = UDim2.new(1, 0, 0, 35)
+TitleIntro.Position = UDim2.new(0, 0, 0, 58)
 TitleIntro.BackgroundTransparency = 1
-TitleIntro.Text = "KiyoHub"
+TitleIntro.Text = "KIYO HUB"
 TitleIntro.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleIntro.Font = Enum.Font.GothamBold
-TitleIntro.TextSize = 28
+TitleIntro.TextSize = 22
+
+local StatusLabel = Instance.new("TextLabel", IntroFrame)
+StatusLabel.Size = UDim2.new(1, 0, 0, 20)
+StatusLabel.Position = UDim2.new(0, 0, 0, 95)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Initializing..."
+StatusLabel.TextColor3 = Color3.fromRGB(140, 155, 185)
+StatusLabel.Font = Enum.Font.GothamMedium
+StatusLabel.TextSize = 11
 
 local PercentLabel = Instance.new("TextLabel", IntroFrame)
-PercentLabel.Size = UDim2.new(1, 0, 0, 25)
-PercentLabel.Position = UDim2.new(0, 0, 0, 75)
+PercentLabel.Size = UDim2.new(1, -30, 0, 20)
+PercentLabel.Position = UDim2.new(0, 15, 0, 118)
 PercentLabel.BackgroundTransparency = 1
-PercentLabel.Text = "Loading... 0%"
-PercentLabel.TextColor3 = Color3.fromRGB(180, 190, 210)
-PercentLabel.Font = Enum.Font.GothamMedium
-PercentLabel.TextSize = 12
+PercentLabel.Text = "0%"
+PercentLabel.TextColor3 = Color3.fromRGB(0, 150, 255)
+PercentLabel.Font = Enum.Font.GothamBold
+PercentLabel.TextSize = 11
+PercentLabel.TextXAlignment = Enum.TextXAlignment.Right
 
 local LoadBarBg = Instance.new("Frame", IntroFrame)
-LoadBarBg.Size = UDim2.new(0.85, 0, 0, 10)
-LoadBarBg.Position = UDim2.new(0.075, 0, 0, 115)
-LoadBarBg.BackgroundColor3 = Color3.fromRGB(20, 25, 33)
+LoadBarBg.Size = UDim2.new(0.85, 0, 0, 8)
+LoadBarBg.Position = UDim2.new(0.075, 0, 0, 142)
+LoadBarBg.BackgroundColor3 = Color3.fromRGB(18, 23, 33)
 LoadBarBg.BorderSizePixel = 0
 Instance.new("UICorner", LoadBarBg).CornerRadius = UDim.new(1, 0)
 
@@ -87,9 +104,10 @@ LoadBarFill.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
 LoadBarFill.BorderSizePixel = 0
 Instance.new("UICorner", LoadBarFill).CornerRadius = UDim.new(1, 0)
 
-TweenService:Create(IntroFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-    Size = UDim2.new(0, 320, 0, 160),
-    Position = UDim2.new(0.5, -160, 0.5, -80)
+-- Hiệu ứng mở Intro mượt mà
+TweenService:Create(IntroFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 340, 0, 180),
+    Position = UDim2.new(0.5, -170, 0.5, -90)
 }):Play()
 
 local ScreenGui = Instance.new("ScreenGui", ParentGui)
@@ -103,24 +121,41 @@ DropdownGui.ResetOnSpawn = false
 DropdownGui.DisplayOrder = 9999
 DropdownGui.Enabled = false
 
+-- Thanh load lúc nhanh lúc chậm (Non-linear curve) trong đúng 4.3 giây
 task.spawn(function()
     local hueTitle = 0
     local hueBar = 0
-    local progress = 0
-    while progress < 100 do
-        progress = progress + 2.5
-        if progress > 100 then progress = 100 end
+    local elapsed = 0
+    local duration = 4.3
+    
+    while elapsed < duration do
+        local dt = task.wait(0.03)
+        elapsed = elapsed + dt
+        local alpha = math.clamp(elapsed / duration, 0, 1)
         
-        PercentLabel.Text = "Loading... " .. math.floor(progress) .. "%"
-        LoadBarFill.Size = UDim2.new(progress / 100, 0, 1, 0)
+        -- Dùng hàm toán học tạo nhịp điệu: nhanh đầu, chậm giữa, tăng tốc cuối
+        local progressCurve = math.sin(alpha * math.pi * 0.9) * 0.7 + (alpha * 0.3)
+        if alpha >= 0.95 then progressCurve = 1 end
+        local percent = math.clamp(math.floor(progressCurve * 100), 0, 100)
         
-        hueTitle = (hueTitle + 0.05) % 1
-        TitleIntro.TextColor3 = Color3.fromHSV(hueTitle, 0.9, 1)
+        PercentLabel.Text = percent .. "%"
+        LoadBarFill.Size = UDim2.new(percent / 100, 0, 1, 0)
         
-        hueBar = (hueBar + 0.03) % 1
+        if percent < 30 then
+            StatusLabel.Text = "Loading Core Modules..."
+        elseif percent < 70 then
+            StatusLabel.Text = "Bypassing Anti-Cheat & ESP..."
+        elseif percent < 95 then
+            StatusLabel.Text = "Optimizing Performance..."
+        else
+            StatusLabel.Text = "Ready!"
+        end
+        
+        hueTitle = (hueTitle + 0.04) % 1
+        TitleIntro.TextColor3 = Color3.fromHSV(hueTitle, 0.85, 1)
+        
+        hueBar = (hueBar + 0.02) % 1
         LoadBarFill.BackgroundColor3 = Color3.fromHSV(hueBar, 0.9, 1)
-        
-        task.wait(0.05)
     end
     
     ScreenGui.Enabled = true
@@ -131,8 +166,8 @@ task.spawn(function()
         IntroSound:Destroy()
     end)
     
-    TweenService:Create(IntroFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
-    task.wait(0.25)
+    TweenService:Create(IntroFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+    task.wait(0.3)
     IntroGui:Destroy()
 end)
 
@@ -2156,7 +2191,6 @@ local loopTimer = 0
 local espUpdateTimer = 0
 local antiTouchTimer = 0
 
--- Hàm Aimbot đơn giản và chuẩn xác (Đã loại bỏ hoàn toàn logic MM2 Sheriff/Hero cũ)
 local function getClosestPlayerToHead()
     local closestPlayer = nil
     local shortestDistance = math.huge
