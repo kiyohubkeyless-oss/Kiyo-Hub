@@ -345,7 +345,7 @@ local function setupDeathSound(char)
                     local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
                     if hrp then
                         local deathSound = Instance.new("Sound")
-                        deathSound.SoundId = "rbxassetid://8449305114"
+                        deathSound.SoundId = "rbxassetid://4809574295"
                         deathSound.Volume = 3
                         deathSound.Parent = hrp
                         deathSound:Play()
