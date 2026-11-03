@@ -369,7 +369,7 @@ end))
 
 local function AddBounceEffect(button, originalSize)
     button.MouseButton1Down:Connect(function()
-        PlayUISound(452267918, 1)
+        PlayUISound(452267918, 1) -- Âm thanh 45.. cho bấm nút/dropdown thông thường
         pcall(function()
             TweenService:Create(button, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset - 2, originalSize.Y.Scale, originalSize.Y.Offset - 2)}):Play()
         end)
@@ -1101,7 +1101,7 @@ local function CreateTab(name)
         local toggled = data.CurrentValue or false
         local function updateToggle(val)
             toggled = val
-            PlayUISound(226892749, 1)
+            PlayUISound(226892749, 1) -- Chỉ phát âm thanh 22.. khi bật/tắt tính năng
             if toggled then
                 toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
                 circle:TweenPosition(UDim2.new(1, -16, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
@@ -1253,7 +1253,6 @@ local function CreateTab(name)
             AddBounceEffect(optBtn, UDim2.new(1, -4, 0, 26))
             
             optBtn.MouseButton1Click:Connect(function()
-                PlayUISound(226892749, 1)
                 dropdownBtn.Text = tostring(optName)
                 ToggleSubMenuAnimation(OptMenu, false)
                 if data.Callback then pcall(function() data.Callback(optName) end) end
@@ -1370,7 +1369,6 @@ local function CreateTab(name)
             Instance.new("UICorner", noneBtn).CornerRadius = UDim.new(0, 5)
             AddBounceEffect(noneBtn, UDim2.new(1, -4, 0, 26))
             noneBtn.MouseButton1Click:Connect(function()
-                PlayUISound(226892749, 1)
                 dropdownBtn.Text = "None"
                 ToggleSubMenuAnimation(PlayerMenu, false)
                 if data.Callback then pcall(function() data.Callback("None") end) end
@@ -1389,7 +1387,6 @@ local function CreateTab(name)
                     AddBounceEffect(pBtn, UDim2.new(1, -4, 0, 26))
                     
                     pBtn.MouseButton1Click:Connect(function()
-                        PlayUISound(226892749, 1)
                         dropdownBtn.Text = p.DisplayName ~= "" and p.DisplayName or p.Name
                         ToggleSubMenuAnimation(PlayerMenu, false)
                         if data.Callback then pcall(function() data.Callback(p.DisplayName ~= "" and p.DisplayName or p.Name) end) end
@@ -2085,7 +2082,7 @@ TeleportTab:CreateButton({
         pcall(function()
             FlingTargets = {}
             FlingActive = false
-            PlayUISound(226892749, 1)
+            PlayUISound(452267918, 1)
         end)
     end
 })
