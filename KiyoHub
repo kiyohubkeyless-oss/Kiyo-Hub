@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Added)
+-- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -366,6 +366,19 @@ end
 table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(newChar)
     task.wait(0.5)
     setupDeathSound(newChar)
+    if State.Headless then
+        pcall(function()
+            local head = newChar:WaitForChild("Head", 3)
+            if head then
+                head.Transparency = 1
+                for _, child in pairs(head:GetChildren()) do
+                    if child:IsA("Decal") or child:IsA("SpecialMesh") then
+                        child.Transparency = 1
+                    end
+                end
+            end
+        end)
+    end
 end))
 
 local function AddBounceEffect(button, originalSize)
@@ -695,7 +708,6 @@ table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(newChar)
         State.RagdollActive = false
         if flyBv then pcall(function() flyBv:Destroy() end) flyBv = nil end
         if flyBg then pcall(function() flyBg:Destroy() end) flyBg = nil end
-        if State.Headless then applyHeadless(newChar, true) end
         if not State.SpectateActive and Camera and newChar:FindFirstChildOfClass("Humanoid") then
             Camera.CameraSubject = newChar:FindFirstChildOfClass("Humanoid")
         end
@@ -2332,11 +2344,6 @@ end
 
 table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
     pcall(function()
-        if State.Headless then
-            local char = LocalPlayer.Character
-            if char then applyHeadless(char, true) end
-        end
-
         if State.SpectateActive and SpectateTarget and SpectateTarget.Character then
             local targetHum = SpectateTarget.Character:FindFirstChildOfClass("Humanoid")
             if targetHum and Camera then Camera.CameraSubject = targetHum end
