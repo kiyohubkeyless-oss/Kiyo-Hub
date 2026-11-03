@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Sharp Bright Floating Particles, Smooth Scale-Down, Zero Lag, Audio Separation)
+-- Roblox Delta Script - KIYO HUB (Neon Pro + Sleek Gradients, Glow Effects, Ultra Smooth UI, Zero Lag)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -32,7 +32,7 @@ local function PlayUISound(soundId, volume)
     end)
 end
 
--- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + HẠT NHỎ SÁNG RÕ NÉT) ====================
+-- ==================== INTRO LOADING SCREEN ====================
 local IntroGui = Instance.new("ScreenGui", ParentGui)
 IntroGui.Name = "KiyoHubIntroGui"
 IntroGui.ResetOnSpawn = false
@@ -44,31 +44,28 @@ IntroSound.Volume = 2
 IntroSound.Parent = IntroGui
 pcall(function() IntroSound:Play() end)
 
--- Container chứa các hạt trắng nhỏ nhưng cực kỳ sắc nét và sáng rõ
 local ParticleContainer = Instance.new("Folder", IntroGui)
 ParticleContainer.Name = "IntroParticles"
 
 local isIntroActive = true
 
--- Tạo hiệu ứng hạt nhỏ tinh tế nhưng sáng rực, không làm tăng kích thước thô
 task.spawn(function()
     while isIntroActive do
         task.wait(0.12)
         if not isIntroActive then break end
         pcall(function()
             local particle = Instance.new("Frame", ParticleContainer)
-            local size = math.random(4, 6) -- Giữ kích thước nhỏ gọn, tinh tế
+            local size = math.random(4, 6)
             particle.Size = UDim2.new(0, size, 0, size)
             
             local startX = math.random(15, 85) / 100
             particle.Position = UDim2.new(startX, math.random(-100, 100), 1.15, 0)
-            particle.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Trắng tinh khiết tuyệt đối
-            particle.BackgroundTransparency = 0.05 -- Cực rõ, gần như không mờ
+            particle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            particle.BackgroundTransparency = 0.05
             particle.BorderSizePixel = 0
             
             Instance.new("UICorner", particle).CornerRadius = UDim.new(1, 0)
             
-            -- Thêm UIStroke để hạt có viền sáng sắc nét, nổi bật trên nền tối
             local pStroke = Instance.new("UIStroke", particle)
             pStroke.Color = Color3.fromRGB(255, 255, 255)
             pStroke.Transparency = 0.1
@@ -96,7 +93,7 @@ end)
 local IntroFrame = Instance.new("Frame", IntroGui)
 IntroFrame.Size = UDim2.new(0, 0, 0, 0)
 IntroFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-IntroFrame.BackgroundColor3 = Color3.fromRGB(8, 11, 16)
+IntroFrame.BackgroundColor3 = Color3.fromRGB(10, 14, 22)
 IntroFrame.BorderSizePixel = 0
 IntroFrame.ClipsDescendants = false
 
@@ -105,7 +102,14 @@ local IntroStroke = Instance.new("UIStroke", IntroFrame)
 IntroStroke.Color = Color3.fromRGB(0, 130, 255)
 IntroStroke.Thickness = 2
 
--- Logo Icon trong Intro
+-- Gradient bóng bẩy cho Intro Frame
+local IntroGrad = Instance.new("UIGradient", IntroFrame)
+IntroGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(18, 25, 38)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 11, 16))
+})
+IntroGrad.Rotation = 45
+
 local IntroLogo = Instance.new("ImageLabel", IntroFrame)
 IntroLogo.Size = UDim2.new(0, 42, 0, 42)
 IntroLogo.Position = UDim2.new(0.5, -21, 0, 16)
@@ -153,7 +157,12 @@ LoadBarFill.BackgroundColor3 = Color3.fromRGB(0, 140, 255)
 LoadBarFill.BorderSizePixel = 0
 Instance.new("UICorner", LoadBarFill).CornerRadius = UDim.new(1, 0)
 
--- Hiệu ứng mở Intro mượt mà
+local LoadBarGrad = Instance.new("UIGradient", LoadBarFill)
+LoadBarGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 180, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+})
+
 TweenService:Create(IntroFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
     Size = UDim2.new(0, 360, 0, 185),
     Position = UDim2.new(0.5, -180, 0.5, -92.5)
@@ -170,7 +179,6 @@ DropdownGui.ResetOnSpawn = false
 DropdownGui.DisplayOrder = 9999
 DropdownGui.Enabled = false
 
--- Thanh load chuẩn mượt mà trong đúng 4.3 giây
 task.spawn(function()
     local hueTitle = 0
     local hueStroke = 0
@@ -215,7 +223,6 @@ task.spawn(function()
     
     isIntroActive = false
     
-    -- Hiệu ứng thu nhỏ (Scale down) và biến mất trước khi xóa hoàn toàn
     TweenService:Create(IntroFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
         Size = UDim2.new(0, 0, 0, 0),
         Position = UDim2.new(0.5, 0, 0.5, 0),
@@ -791,11 +798,12 @@ local function applyFixLag(enable)
     end)
 end
 
+-- ==================== MAIN UI (BÓNG BỶ - SLEEK GRADIENTS) ====================
 local FloatButton = Instance.new("ImageButton", ScreenGui)
 FloatButton.Name = "FloatButton"
-FloatButton.Size = UDim2.new(0, 42, 0, 42)
+FloatButton.Size = UDim2.new(0, 44, 0, 44)
 FloatButton.Position = UDim2.new(0.05, 0, 0.15, 0)
-FloatButton.BackgroundColor3 = Color3.fromRGB(15, 18, 24)
+FloatButton.BackgroundColor3 = Color3.fromRGB(18, 24, 34)
 FloatButton.Image = "rbxassetid://11778372908"
 FloatButton.Active = true
 FloatButton.Draggable = true
@@ -804,23 +812,30 @@ local FloatCorner = Instance.new("UICorner", FloatButton)
 FloatCorner.CornerRadius = UDim.new(1, 0)
 
 local FloatStroke = Instance.new("UIStroke", FloatButton)
-FloatStroke.Color = Color3.fromRGB(35, 42, 55)
-FloatStroke.Thickness = 1.5
+FloatStroke.Color = Color3.fromRGB(0, 140, 255)
+FloatStroke.Thickness = 1.8
+
+local FloatGrad = Instance.new("UIGradient", FloatButton)
+FloatGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 35, 50)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 17, 25))
+})
+FloatGrad.Rotation = 45
 
 FloatButton.MouseButton1Down:Connect(function()
     PlayUISound(452267918, 1)
-    TweenService:Create(FloatButton, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 36, 0, 36)}):Play()
+    TweenService:Create(FloatButton, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 38, 0, 38)}):Play()
 end)
 
 FloatButton.MouseButton1Up:Connect(function()
-    TweenService:Create(FloatButton, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 42, 0, 42)}):Play()
+    TweenService:Create(FloatButton, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 44, 0, 44)}):Play()
 end)
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 430, 0, 260)
 MainFrame.Position = UDim2.new(0.5, -215, 0.5, -130)
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 15, 20)
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 16, 24)
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = false
 MainFrame.Active = true
@@ -828,32 +843,46 @@ MainFrame.Draggable = true
 MainFrame.ClipsDescendants = true
 
 local MainCorner = Instance.new("UICorner", MainFrame)
-MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.CornerRadius = UDim.new(0, 12)
 
 local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color = Color3.fromRGB(30, 36, 48)
-MainStroke.Thickness = 1.5
+MainStroke.Color = Color3.fromRGB(0, 130, 255)
+MainStroke.Thickness = 1.8
+
+local MainGrad = Instance.new("UIGradient", MainFrame)
+MainGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(16, 22, 34)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 11, 16))
+})
+MainGrad.Rotation = 90
 
 local TopBar = Instance.new("Frame", MainFrame)
-TopBar.Size = UDim2.new(1, 0, 0, 36)
-TopBar.BackgroundColor3 = Color3.fromRGB(17, 21, 28)
+TopBar.Size = UDim2.new(1, 0, 0, 38)
+TopBar.BackgroundColor3 = Color3.fromRGB(20, 28, 42)
 TopBar.BorderSizePixel = 0
 
 local TopCorner = Instance.new("UICorner", TopBar)
-TopCorner.CornerRadius = UDim.new(0, 10)
+TopCorner.CornerRadius = UDim.new(0, 12)
+
+local TopGrad = Instance.new("UIGradient", TopBar)
+TopGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(24, 34, 50)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(14, 20, 30))
+})
+TopGrad.Rotation = 90
 
 local LogoImg = Instance.new("ImageLabel", TopBar)
 LogoImg.Size = UDim2.new(0, 22, 0, 22)
-LogoImg.Position = UDim2.new(0, 10, 0.5, -11)
+LogoImg.Position = UDim2.new(0, 12, 0.5, -11)
 LogoImg.BackgroundTransparency = 1
 LogoImg.Image = "rbxassetid://11778372908"
 
 local TitleLabel = Instance.new("TextLabel", TopBar)
 TitleLabel.Size = UDim2.new(0, 250, 1, 0)
-TitleLabel.Position = UDim2.new(0, 40, 0, 0)
+TitleLabel.Position = UDim2.new(0, 42, 0, 0)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "Kiyo Hub"
-TitleLabel.TextColor3 = Color3.fromRGB(230, 235, 245)
+TitleLabel.TextColor3 = Color3.fromRGB(240, 245, 255)
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 13
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -872,12 +901,19 @@ UnloadOverlay.BackgroundTransparency = 0.5
 local UnloadDialog = Instance.new("Frame", UnloadGui)
 UnloadDialog.Size = UDim2.new(0, 280, 0, 130)
 UnloadDialog.Position = UDim2.new(0.5, -140, 0.5, -65)
-UnloadDialog.BackgroundColor3 = Color3.fromRGB(15, 20, 28)
+UnloadDialog.BackgroundColor3 = Color3.fromRGB(14, 19, 28)
 UnloadDialog.BorderSizePixel = 0
 Instance.new("UICorner", UnloadDialog).CornerRadius = UDim.new(0, 10)
 local DialogStroke = Instance.new("UIStroke", UnloadDialog)
-DialogStroke.Color = Color3.fromRGB(45, 55, 70)
+DialogStroke.Color = Color3.fromRGB(60, 75, 100)
 DialogStroke.Thickness = 1.5
+
+local DialogGrad = Instance.new("UIGradient", UnloadDialog)
+DialogGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 27, 40)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 14, 20))
+})
+DialogGrad.Rotation = 45
 
 local DialogTitle = Instance.new("TextLabel", UnloadDialog)
 DialogTitle.Size = UDim2.new(1, 0, 0, 40)
@@ -900,23 +936,35 @@ DialogSub.TextSize = 11
 local YesBtn = Instance.new("TextButton", UnloadDialog)
 YesBtn.Size = UDim2.new(0, 115, 0, 32)
 YesBtn.Position = UDim2.new(0, 18, 1, -45)
-YesBtn.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
+YesBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 YesBtn.Text = "Yes (Unload)"
 YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 YesBtn.Font = Enum.Font.GothamBold
 YesBtn.TextSize = 11
 Instance.new("UICorner", YesBtn).CornerRadius = UDim.new(0, 6)
+local YesGrad = Instance.new("UIGradient", YesBtn)
+YesGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(230, 60, 60)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 35, 35))
+})
+YesGrad.Rotation = 90
 AddBounceEffect(YesBtn, UDim2.new(0, 115, 0, 32))
 
 local NoBtn = Instance.new("TextButton", UnloadDialog)
 NoBtn.Size = UDim2.new(0, 115, 0, 32)
 NoBtn.Position = UDim2.new(1, -133, 1, -45)
-NoBtn.BackgroundColor3 = Color3.fromRGB(35, 45, 60)
+NoBtn.BackgroundColor3 = Color3.fromRGB(40, 50, 70)
 NoBtn.Text = "No"
 NoBtn.TextColor3 = Color3.fromRGB(220, 230, 250)
 NoBtn.Font = Enum.Font.GothamBold
 NoBtn.TextSize = 11
 Instance.new("UICorner", NoBtn).CornerRadius = UDim.new(0, 6)
+local NoGrad = Instance.new("UIGradient", NoBtn)
+NoGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 65, 90)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 38, 55))
+})
+NoGrad.Rotation = 90
 AddBounceEffect(NoBtn, UDim2.new(0, 115, 0, 32))
 
 NoBtn.MouseButton1Click:Connect(function()
@@ -929,13 +977,19 @@ end)
 
 local CloseBtn = Instance.new("TextButton", TopBar)
 CloseBtn.Size = UDim2.new(0, 26, 0, 26)
-CloseBtn.Position = UDim2.new(1, -30, 0.5, -13)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
+CloseBtn.Position = UDim2.new(1, -32, 0.5, -13)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.TextSize = 11
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
+local CloseGrad = Instance.new("UIGradient", CloseBtn)
+CloseGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(230, 60, 60)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 35, 35))
+})
+CloseGrad.Rotation = 90
 AddBounceEffect(CloseBtn, UDim2.new(0, 26, 0, 26))
 
 CloseBtn.MouseButton1Click:Connect(function()
@@ -958,7 +1012,7 @@ FloatButton.MouseButton1Click:Connect(function()
 end)
 
 local TabListFrame = Instance.new("ScrollingFrame", MainFrame)
-TabListFrame.Size = UDim2.new(0, 110, 1, -40)
+TabListFrame.Size = UDim2.new(0, 110, 1, -42)
 TabListFrame.Position = UDim2.new(0, 0, 0, 40)
 TabListFrame.BackgroundTransparency = 1
 TabListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -966,11 +1020,11 @@ TabListFrame.ScrollBarThickness = 2
 
 local UIListLayoutTabs = Instance.new("UIListLayout", TabListFrame)
 UIListLayoutTabs.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayoutTabs.Padding = UDim.new(0, 4)
+UIListLayoutTabs.Padding = UDim.new(0, 5)
 
 local ContainerHolder = Instance.new("Frame", MainFrame)
-ContainerHolder.Size = UDim2.new(1, -115, 1, -42)
-ContainerHolder.Position = UDim2.new(0, 115, 0, 40)
+ContainerHolder.Size = UDim2.new(1, -115, 1, -44)
+ContainerHolder.Position = UDim2.new(0, 115, 0, 42)
 ContainerHolder.BackgroundTransparency = 1
 
 local Tabs = {}
@@ -1000,38 +1054,65 @@ local function CreateTab(name)
     
     local listLayout = Instance.new("UIListLayout", tabScroll)
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    listLayout.Padding = UDim.new(0, 5)
+    listLayout.Padding = UDim.new(0, 6)
     
     listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         tabScroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
     end)
     
     local tabBtn = Instance.new("TextButton", TabListFrame)
-    tabBtn.Size = UDim2.new(1, -8, 0, 28)
+    tabBtn.Size = UDim2.new(1, -8, 0, 30)
     tabBtn.Position = UDim2.new(0, 4, 0, 0)
-    tabBtn.BackgroundColor3 = Color3.fromRGB(17, 21, 28)
+    tabBtn.BackgroundColor3 = Color3.fromRGB(20, 26, 38)
     tabBtn.Text = name
-    tabBtn.TextColor3 = Color3.fromRGB(150, 165, 190)
+    tabBtn.TextColor3 = Color3.fromRGB(160, 175, 200)
     tabBtn.Font = Enum.Font.GothamMedium
     tabBtn.TextSize = 11
-    Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
-    AddBounceEffect(tabBtn, UDim2.new(1, -8, 0, 28))
+    Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 7)
+    
+    local tabGrad = Instance.new("UIGradient", tabBtn)
+    tabGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(24, 32, 46)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 32))
+    })
+    tabGrad.Rotation = 90
+    
+    local tabStroke = Instance.new("UIStroke", tabBtn)
+    tabStroke.Color = Color3.fromRGB(40, 52, 72)
+    tabStroke.Thickness = 1
+    
+    AddBounceEffect(tabBtn, UDim2.new(1, -8, 0, 30))
     
     tabBtn.MouseButton1Click:Connect(function()
         for _, t in pairs(Tabs) do
             t.Scroll.Visible = false
-            t.Button.BackgroundColor3 = Color3.fromRGB(17, 21, 28)
-            t.Button.TextColor3 = Color3.fromRGB(150, 165, 190)
+            t.Button.BackgroundColor3 = Color3.fromRGB(20, 26, 38)
+            t.Button.TextColor3 = Color3.fromRGB(160, 175, 200)
+            t.Button.UIStroke.Color = Color3.fromRGB(40, 52, 72)
+            t.Button.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(24, 32, 46)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 32))
+            })
         end
         tabScroll.Visible = true
-        tabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        tabBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
         tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tabBtn.UIStroke.Color = Color3.fromRGB(100, 180, 255)
+        tabBtn.UIGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 160, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+        })
     end)
     
     if not activeTab then
         tabScroll.Visible = true
-        tabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        tabBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
         tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tabStroke.Color = Color3.fromRGB(100, 180, 255)
+        tabGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 160, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+        })
         activeTab = tabScroll
     end
     
@@ -1041,45 +1122,63 @@ local function CreateTab(name)
     
     function api:CreateToggle(data)
         local frame = Instance.new("Frame", tabScroll)
-        frame.Size = UDim2.new(1, -8, 0, 30)
-        frame.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
-        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+        frame.Size = UDim2.new(1, -8, 0, 32)
+        frame.BackgroundColor3 = Color3.fromRGB(18, 24, 34)
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 7)
+        
+        local frameGrad = Instance.new("UIGradient", frame)
+        frameGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 30, 42)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 20, 28))
+        })
+        frameGrad.Rotation = 90
         
         local stroke = Instance.new("UIStroke", frame)
-        stroke.Color = Color3.fromRGB(30, 36, 48)
-        stroke.Thickness = 1
+        stroke.Color = Color3.fromRGB(35, 46, 64)
+        stroke.Thickness = 1.2
         
         local label = Instance.new("TextLabel", frame)
         label.Size = UDim2.new(1, -45, 1, 0)
-        label.Position = UDim2.new(0, 8, 0, 0)
+        label.Position = UDim2.new(0, 10, 0, 0)
         label.BackgroundTransparency = 1
         label.Text = data.Name
-        label.TextColor3 = Color3.fromRGB(210, 220, 235)
-        label.Font = Enum.Font.Gotham
+        label.TextColor3 = Color3.fromRGB(220, 230, 245)
+        label.Font = Enum.Font.GothamMedium
         label.TextSize = 11
         label.TextXAlignment = Enum.TextXAlignment.Left
         
         local toggleBtn = Instance.new("TextButton", frame)
-        toggleBtn.Size = UDim2.new(0, 32, 0, 18)
-        toggleBtn.Position = UDim2.new(1, -38, 0.5, -9)
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(35, 42, 55)
+        toggleBtn.Size = UDim2.new(0, 36, 0, 20)
+        toggleBtn.Position = UDim2.new(1, -42, 0.5, -10)
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(35, 46, 64)
         toggleBtn.Text = ""
         Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
         
+        local tBtnGrad = Instance.new("UIGradient", toggleBtn)
+        tBtnGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 58, 80)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 37, 52))
+        })
+        tBtnGrad.Rotation = 90
+
+        local tBtnStroke = Instance.new("UIStroke", toggleBtn)
+        tBtnStroke.Color = Color3.fromRGB(60, 75, 100)
+        tBtnStroke.Thickness = 1
+        
         toggleBtn.MouseButton1Down:Connect(function()
             pcall(function()
-                TweenService:Create(toggleBtn, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 28, 0, 14)}):Play()
+                TweenService:Create(toggleBtn, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 32, 0, 16)}):Play()
             end)
         end)
         toggleBtn.MouseButton1Up:Connect(function()
             pcall(function()
-                TweenService:Create(toggleBtn, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 32, 0, 18)}):Play()
+                TweenService:Create(toggleBtn, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 36, 0, 20)}):Play()
             end)
         end)
         
         local circle = Instance.new("Frame", toggleBtn)
-        circle.Size = UDim2.new(0, 14, 0, 14)
-        circle.Position = UDim2.new(0, 2, 0.5, -7)
+        circle.Size = UDim2.new(0, 16, 0, 16)
+        circle.Position = UDim2.new(0, 2, 0.5, -8)
         circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
         
@@ -1089,10 +1188,20 @@ local function CreateTab(name)
             PlayUISound(226892749, 1)
             if toggled then
                 toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
-                circle:TweenPosition(UDim2.new(1, -16, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
+                tBtnGrad.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+                })
+                tBtnStroke.Color = Color3.fromRGB(120, 200, 255)
+                circle:TweenPosition(UDim2.new(1, -18, 0.5, -8), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
             else
-                toggleBtn.BackgroundColor3 = Color3.fromRGB(35, 42, 55)
-                circle:TweenPosition(UDim2.new(0, 2, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
+                toggleBtn.BackgroundColor3 = Color3.fromRGB(35, 46, 64)
+                tBtnGrad.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 58, 80)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 37, 52))
+                })
+                tBtnStroke.Color = Color3.fromRGB(60, 75, 100)
+                circle:TweenPosition(UDim2.new(0, 2, 0.5, -8), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
             end
             if data.Callback then pcall(function() data.Callback(toggled) end) end
         end
@@ -1106,34 +1215,45 @@ local function CreateTab(name)
     
     function api:CreateInput(data)
         local frame = Instance.new("Frame", tabScroll)
-        frame.Size = UDim2.new(1, -8, 0, 30)
-        frame.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
-        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+        frame.Size = UDim2.new(1, -8, 0, 32)
+        frame.BackgroundColor3 = Color3.fromRGB(18, 24, 34)
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 7)
+        
+        local frameGrad = Instance.new("UIGradient", frame)
+        frameGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 30, 42)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 20, 28))
+        })
+        frameGrad.Rotation = 90
         
         local stroke = Instance.new("UIStroke", frame)
-        stroke.Color = Color3.fromRGB(30, 36, 48)
-        stroke.Thickness = 1
+        stroke.Color = Color3.fromRGB(35, 46, 64)
+        stroke.Thickness = 1.2
         
         local label = Instance.new("TextLabel", frame)
         label.Size = UDim2.new(0.5, 0, 1, 0)
-        label.Position = UDim2.new(0, 8, 0, 0)
+        label.Position = UDim2.new(0, 10, 0, 0)
         label.BackgroundTransparency = 1
         label.Text = data.Name
-        label.TextColor3 = Color3.fromRGB(210, 220, 235)
-        label.Font = Enum.Font.Gotham
+        label.TextColor3 = Color3.fromRGB(220, 230, 245)
+        label.Font = Enum.Font.GothamMedium
         label.TextSize = 11
         label.TextXAlignment = Enum.TextXAlignment.Left
         
         local textBox = Instance.new("TextBox", frame)
-        textBox.Size = UDim2.new(0.42, 0, 0, 20)
-        textBox.Position = UDim2.new(0.55, 0, 0.5, -10)
-        textBox.BackgroundColor3 = Color3.fromRGB(24, 30, 40)
+        textBox.Size = UDim2.new(0.42, 0, 0, 22)
+        textBox.Position = UDim2.new(0.55, 0, 0.5, -11)
+        textBox.BackgroundColor3 = Color3.fromRGB(24, 32, 46)
         textBox.Text = data.CurrentValue or ""
         textBox.PlaceholderText = data.PlaceholderText or ""
         textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
         textBox.Font = Enum.Font.Gotham
         textBox.TextSize = 11
-        Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 4)
+        Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 5)
+        
+        local boxStroke = Instance.new("UIStroke", textBox)
+        boxStroke.Color = Color3.fromRGB(50, 65, 90)
+        boxStroke.Thickness = 1
         
         textBox.FocusLost:Connect(function()
             if data.Callback then pcall(function() data.Callback(textBox.Text) end) end
@@ -1142,56 +1262,75 @@ local function CreateTab(name)
     
     function api:CreateDropdown(data)
         local frame = Instance.new("Frame", tabScroll)
-        frame.Size = UDim2.new(1, -8, 0, 30)
-        frame.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
-        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+        frame.Size = UDim2.new(1, -8, 0, 32)
+        frame.BackgroundColor3 = Color3.fromRGB(18, 24, 34)
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 7)
+        
+        local frameGrad = Instance.new("UIGradient", frame)
+        frameGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 30, 42)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 20, 28))
+        })
+        frameGrad.Rotation = 90
         
         local stroke = Instance.new("UIStroke", frame)
-        stroke.Color = Color3.fromRGB(30, 36, 48)
-        stroke.Thickness = 1
+        stroke.Color = Color3.fromRGB(35, 46, 64)
+        stroke.Thickness = 1.2
         
         local label = Instance.new("TextLabel", frame)
         label.Size = UDim2.new(0.4, 0, 1, 0)
-        label.Position = UDim2.new(0, 8, 0, 0)
+        label.Position = UDim2.new(0, 10, 0, 0)
         label.BackgroundTransparency = 1
         label.Text = data.Name
-        label.TextColor3 = Color3.fromRGB(210, 220, 235)
-        label.Font = Enum.Font.Gotham
+        label.TextColor3 = Color3.fromRGB(220, 230, 245)
+        label.Font = Enum.Font.GothamMedium
         label.TextSize = 11
         label.TextXAlignment = Enum.TextXAlignment.Left
         
         local dropdownBtn = Instance.new("TextButton", frame)
-        dropdownBtn.Size = UDim2.new(0.55, 0, 0, 20)
-        dropdownBtn.Position = UDim2.new(0.43, 0, 0.5, -10)
-        dropdownBtn.BackgroundColor3 = Color3.fromRGB(24, 30, 40)
+        dropdownBtn.Size = UDim2.new(0.55, 0, 0, 22)
+        dropdownBtn.Position = UDim2.new(0.43, 0, 0.5, -11)
+        dropdownBtn.BackgroundColor3 = Color3.fromRGB(24, 32, 46)
         dropdownBtn.Text = data.CurrentOption or "Default"
         dropdownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         dropdownBtn.Font = Enum.Font.Gotham
         dropdownBtn.TextSize = 10
-        Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 4)
-        AddBounceEffect(dropdownBtn, UDim2.new(0.55, 0, 0, 20))
+        Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 5)
+        
+        local dropStroke = Instance.new("UIStroke", dropdownBtn)
+        dropStroke.Color = Color3.fromRGB(50, 65, 90)
+        dropStroke.Thickness = 1
+        
+        AddBounceEffect(dropdownBtn, UDim2.new(0.55, 0, 0, 22))
 
         local OptMenu = Instance.new("Frame", DropdownGui)
         OptMenu.Name = "OptMenu_" .. math.random(1000, 9999)
         OptMenu.Size = UDim2.new(0, 0, 0, 0)
         OptMenu.Position = UDim2.new(0.5, -80, 0.5, -65)
-        OptMenu.BackgroundColor3 = Color3.fromRGB(14, 18, 25)
+        OptMenu.BackgroundColor3 = Color3.fromRGB(14, 20, 30)
         OptMenu.Visible = false
         OptMenu.Active = true
         OptMenu.Draggable = true
         OptMenu.ClipsDescendants = true
 
-        Instance.new("UICorner", OptMenu).CornerRadius = UDim.new(0, 8)
+        Instance.new("UICorner", OptMenu).CornerRadius = UDim.new(0, 9)
         local menuStroke = Instance.new("UIStroke", OptMenu)
-        menuStroke.Color = Color3.fromRGB(50, 60, 75)
+        menuStroke.Color = Color3.fromRGB(0, 140, 255)
         menuStroke.Thickness = 1.5
+
+        local menuGrad = Instance.new("UIGradient", OptMenu)
+        menuGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 28, 42)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 14, 22))
+        })
+        menuGrad.Rotation = 45
 
         local menuTitle = Instance.new("TextLabel", OptMenu)
         menuTitle.Size = UDim2.new(1, -30, 0, 28)
-        menuTitle.Position = UDim2.new(0, 6, 0, 0)
+        menuTitle.Position = UDim2.new(0, 8, 0, 0)
         menuTitle.BackgroundTransparency = 1
         menuTitle.Text = data.Name
-        menuTitle.TextColor3 = Color3.fromRGB(210, 220, 235)
+        menuTitle.TextColor3 = Color3.fromRGB(220, 230, 245)
         menuTitle.Font = Enum.Font.GothamBold
         menuTitle.TextSize = 11
         menuTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -1199,7 +1338,7 @@ local function CreateTab(name)
         local subCloseBtn = Instance.new("TextButton", OptMenu)
         subCloseBtn.Size = UDim2.new(0, 20, 0, 20)
         subCloseBtn.Position = UDim2.new(1, -24, 0, 4)
-        subCloseBtn.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
+        subCloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
         subCloseBtn.Text = "X"
         subCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         subCloseBtn.Font = Enum.Font.GothamBold
@@ -1229,12 +1368,20 @@ local function CreateTab(name)
         for _, optName in ipairs(data.Options or {}) do
             local optBtn = Instance.new("TextButton", scrollList)
             optBtn.Size = UDim2.new(1, -4, 0, 26)
-            optBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 33)
+            optBtn.BackgroundColor3 = Color3.fromRGB(22, 30, 44)
             optBtn.Text = tostring(optName)
             optBtn.TextColor3 = Color3.fromRGB(240, 245, 255)
             optBtn.Font = Enum.Font.GothamMedium
             optBtn.TextSize = 10
             Instance.new("UICorner", optBtn).CornerRadius = UDim.new(0, 5)
+            
+            local optGrad = Instance.new("UIGradient", optBtn)
+            optGrad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 38, 56)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 24, 36))
+            })
+            optGrad.Rotation = 90
+            
             AddBounceEffect(optBtn, UDim2.new(1, -4, 0, 26))
             
             optBtn.MouseButton1Click:Connect(function()
@@ -1256,56 +1403,75 @@ local function CreateTab(name)
     
     function api:CreatePlayerDropdown(data)
         local frame = Instance.new("Frame", tabScroll)
-        frame.Size = UDim2.new(1, -8, 0, 30)
-        frame.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
-        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+        frame.Size = UDim2.new(1, -8, 0, 32)
+        frame.BackgroundColor3 = Color3.fromRGB(18, 24, 34)
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 7)
+        
+        local frameGrad = Instance.new("UIGradient", frame)
+        frameGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 30, 42)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 20, 28))
+        })
+        frameGrad.Rotation = 90
         
         local stroke = Instance.new("UIStroke", frame)
-        stroke.Color = Color3.fromRGB(30, 36, 48)
-        stroke.Thickness = 1
+        stroke.Color = Color3.fromRGB(35, 46, 64)
+        stroke.Thickness = 1.2
         
         local label = Instance.new("TextLabel", frame)
         label.Size = UDim2.new(0.4, 0, 1, 0)
-        label.Position = UDim2.new(0, 8, 0, 0)
+        label.Position = UDim2.new(0, 10, 0, 0)
         label.BackgroundTransparency = 1
         label.Text = data.Name
-        label.TextColor3 = Color3.fromRGB(210, 220, 235)
-        label.Font = Enum.Font.Gotham
+        label.TextColor3 = Color3.fromRGB(220, 230, 245)
+        label.Font = Enum.Font.GothamMedium
         label.TextSize = 11
         label.TextXAlignment = Enum.TextXAlignment.Left
         
         local dropdownBtn = Instance.new("TextButton", frame)
-        dropdownBtn.Size = UDim2.new(0.55, 0, 0, 20)
-        dropdownBtn.Position = UDim2.new(0.43, 0, 0.5, -10)
-        dropdownBtn.BackgroundColor3 = Color3.fromRGB(24, 30, 40)
+        dropdownBtn.Size = UDim2.new(0.55, 0, 0, 22)
+        dropdownBtn.Position = UDim2.new(0.43, 0, 0.5, -11)
+        dropdownBtn.BackgroundColor3 = Color3.fromRGB(24, 32, 46)
         dropdownBtn.Text = data.CurrentOption or "None"
         dropdownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         dropdownBtn.Font = Enum.Font.Gotham
         dropdownBtn.TextSize = 10
-        Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 4)
-        AddBounceEffect(dropdownBtn, UDim2.new(0.55, 0, 0, 20))
+        Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 5)
+        
+        local dropStroke = Instance.new("UIStroke", dropdownBtn)
+        dropStroke.Color = Color3.fromRGB(50, 65, 90)
+        dropStroke.Thickness = 1
+        
+        AddBounceEffect(dropdownBtn, UDim2.new(0.55, 0, 0, 22))
 
         local PlayerMenu = Instance.new("Frame", DropdownGui)
         PlayerMenu.Name = "PlayerMenu_" .. math.random(1000, 9999)
         PlayerMenu.Size = UDim2.new(0, 0, 0, 0)
         PlayerMenu.Position = UDim2.new(0.5, -100, 0.5, -90)
-        PlayerMenu.BackgroundColor3 = Color3.fromRGB(14, 18, 25)
+        PlayerMenu.BackgroundColor3 = Color3.fromRGB(14, 20, 30)
         PlayerMenu.Visible = false
         PlayerMenu.Active = true
         PlayerMenu.Draggable = true
         PlayerMenu.ClipsDescendants = true
 
-        Instance.new("UICorner", PlayerMenu).CornerRadius = UDim.new(0, 8)
+        Instance.new("UICorner", PlayerMenu).CornerRadius = UDim.new(0, 9)
         local menuStroke = Instance.new("UIStroke", PlayerMenu)
-        menuStroke.Color = Color3.fromRGB(50, 60, 75)
+        menuStroke.Color = Color3.fromRGB(0, 140, 255)
         menuStroke.Thickness = 1.5
+
+        local menuGrad = Instance.new("UIGradient", PlayerMenu)
+        menuGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 28, 42)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 14, 22))
+        })
+        menuGrad.Rotation = 45
 
         local menuTitle = Instance.new("TextLabel", PlayerMenu)
         menuTitle.Size = UDim2.new(1, -30, 0, 28)
-        menuTitle.Position = UDim2.new(0, 6, 0, 0)
+        menuTitle.Position = UDim2.new(0, 8, 0, 0)
         menuTitle.BackgroundTransparency = 1
         menuTitle.Text = "Select Player"
-        menuTitle.TextColor3 = Color3.fromRGB(210, 220, 235)
+        menuTitle.TextColor3 = Color3.fromRGB(220, 230, 245)
         menuTitle.Font = Enum.Font.GothamBold
         menuTitle.TextSize = 11
         menuTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -1313,7 +1479,7 @@ local function CreateTab(name)
         local subCloseBtn = Instance.new("TextButton", PlayerMenu)
         subCloseBtn.Size = UDim2.new(0, 20, 0, 20)
         subCloseBtn.Position = UDim2.new(1, -24, 0, 4)
-        subCloseBtn.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
+        subCloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
         subCloseBtn.Text = "X"
         subCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         subCloseBtn.Font = Enum.Font.GothamBold
@@ -1347,12 +1513,20 @@ local function CreateTab(name)
             
             local noneBtn = Instance.new("TextButton", scrollList)
             noneBtn.Size = UDim2.new(1, -4, 0, 26)
-            noneBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 33)
+            noneBtn.BackgroundColor3 = Color3.fromRGB(22, 30, 44)
             noneBtn.Text = "None"
-            noneBtn.TextColor3 = Color3.fromRGB(180, 190, 205)
+            noneBtn.TextColor3 = Color3.fromRGB(180, 195, 215)
             noneBtn.Font = Enum.Font.GothamMedium
             noneBtn.TextSize = 10
             Instance.new("UICorner", noneBtn).CornerRadius = UDim.new(0, 5)
+            
+            local nGrad = Instance.new("UIGradient", noneBtn)
+            nGrad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 38, 56)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 24, 36))
+            })
+            nGrad.Rotation = 90
+            
             AddBounceEffect(noneBtn, UDim2.new(1, -4, 0, 26))
             noneBtn.MouseButton1Click:Connect(function()
                 PlayUISound(226892749, 1)
@@ -1365,12 +1539,20 @@ local function CreateTab(name)
                 if p and p ~= LocalPlayer then
                     local pBtn = Instance.new("TextButton", scrollList)
                     pBtn.Size = UDim2.new(1, -4, 0, 26)
-                    pBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 33)
+                    pBtn.BackgroundColor3 = Color3.fromRGB(22, 30, 44)
                     pBtn.Text = p.DisplayName ~= "" and p.DisplayName or p.Name
                     pBtn.TextColor3 = Color3.fromRGB(240, 245, 255)
                     pBtn.Font = Enum.Font.GothamMedium
                     pBtn.TextSize = 10
                     Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 5)
+                    
+                    local pGrad = Instance.new("UIGradient", pBtn)
+                    pGrad.Color = ColorSequence.new({
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 38, 56)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 24, 36))
+                    })
+                    pGrad.Rotation = 90
+                    
                     AddBounceEffect(pBtn, UDim2.new(1, -4, 0, 26))
                     
                     pBtn.MouseButton1Click:Connect(function()
@@ -1391,22 +1573,36 @@ local function CreateTab(name)
                 ToggleSubMenuAnimation(PlayerMenu, false)
             end
         end)
+        
+        return {
+            SetText = function(text)
+                dropdownBtn.Text = text
+            end
+        }
     end
     
     function api:CreateButton(data)
         local btn = Instance.new("TextButton", tabScroll)
-        btn.Size = UDim2.new(1, -8, 0, 30)
-        btn.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
+        btn.Size = UDim2.new(1, -8, 0, 32)
+        btn.BackgroundColor3 = Color3.fromRGB(20, 28, 42)
         btn.Text = data.Name
-        btn.TextColor3 = Color3.fromRGB(210, 220, 235)
+        btn.TextColor3 = Color3.fromRGB(220, 230, 245)
         btn.Font = Enum.Font.GothamBold
         btn.TextSize = 11
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-        AddBounceEffect(btn, UDim2.new(1, -8, 0, 30))
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
+        
+        local btnGrad = Instance.new("UIGradient", btn)
+        btnGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(26, 36, 54)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+        })
+        btnGrad.Rotation = 90
+        
+        AddBounceEffect(btn, UDim2.new(1, -8, 0, 32))
         
         local stroke = Instance.new("UIStroke", btn)
-        stroke.Color = Color3.fromRGB(30, 36, 48)
-        stroke.Thickness = 1
+        stroke.Color = Color3.fromRGB(45, 60, 85)
+        stroke.Thickness = 1.2
         
         btn.MouseButton1Click:Connect(function()
             if data.Callback then pcall(function() data.Callback() end) end
@@ -1415,10 +1611,10 @@ local function CreateTab(name)
     
     function api:CreateSection(name)
         local secLabel = Instance.new("TextLabel", tabScroll)
-        secLabel.Size = UDim2.new(1, -8, 0, 18)
+        secLabel.Size = UDim2.new(1, -8, 0, 20)
         secLabel.BackgroundTransparency = 1
         secLabel.Text = "  " .. name
-        secLabel.TextColor3 = Color3.fromRGB(110, 130, 160)
+        secLabel.TextColor3 = Color3.fromRGB(130, 155, 190)
         secLabel.Font = Enum.Font.GothamBold
         secLabel.TextSize = 10
         secLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -1435,24 +1631,32 @@ local ServerTab = CreateTab("Server")
 local InfoTab = CreateTab("Info")
 
 local function createSubButton(name, text, pos, size)
-    local btnSize = size or UDim2.new(0, 36, 0, 36)
+    local btnSize = size or UDim2.new(0, 38, 0, 38)
     local btn = Instance.new("TextButton", ScreenGui)
     btn.Name = name
     btn.Size = btnSize
     btn.Position = pos
-    btn.BackgroundColor3 = Color3.fromRGB(20, 24, 32)
+    btn.BackgroundColor3 = Color3.fromRGB(22, 30, 44)
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
-    btn.TextColor3 = Color3.fromRGB(220, 230, 250)
+    btn.TextColor3 = Color3.fromRGB(230, 240, 255)
     btn.TextSize = 10
     btn.Visible = false
     btn.Active = true
     btn.Draggable = true
     
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 9)
     local stroke = Instance.new("UIStroke", btn)
-    stroke.Color = Color3.fromRGB(35, 42, 55)
+    stroke.Color = Color3.fromRGB(50, 68, 98)
     stroke.Thickness = 1.5
+
+    local subGrad = Instance.new("UIGradient", btn)
+    subGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+    })
+    subGrad.Rotation = 90
+
     AddBounceEffect(btn, btnSize)
     return btn, stroke
 end
@@ -1463,7 +1667,11 @@ SubFlyBtn.MouseButton1Click:Connect(function()
         State.FlyActive = not State.FlyActive
         setupFly()
         if State.FlyActive then
-            SubFlyBtn.BackgroundColor3, SubFlyBtn.TextColor3, SubFlyStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
+            SubFlyBtn.BackgroundColor3, SubFlyBtn.TextColor3, SubFlyStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(120, 200, 255)
+            SubFlyBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+            })
             if flyRootPart and flyHumanoid then
                 if flyBv then flyBv:Destroy() end
                 if flyBg then flyBg:Destroy() end
@@ -1474,7 +1682,11 @@ SubFlyBtn.MouseButton1Click:Connect(function()
                 flyHumanoid.PlatformStand = true
             end
         else
-            SubFlyBtn.BackgroundColor3, SubFlyBtn.TextColor3, SubFlyStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
+            SubFlyBtn.BackgroundColor3, SubFlyBtn.TextColor3, SubFlyStroke.Color = Color3.fromRGB(22, 30, 44), Color3.fromRGB(230, 240, 255), Color3.fromRGB(50, 68, 98)
+            SubFlyBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
             if flyBv then flyBv:Destroy() flyBv = nil end
             if flyBg then flyBg:Destroy() flyBg = nil end
             if flyHumanoid then flyHumanoid.PlatformStand = false end
@@ -1489,10 +1701,18 @@ SubRagdollBtn.MouseButton1Click:Connect(function()
         local char = LocalPlayer.Character
         if char then
             if State.RagdollActive then
-                SubRagdollBtn.BackgroundColor3, SubRagdollBtn.TextColor3, SubRagdollStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
+                SubRagdollBtn.BackgroundColor3, SubRagdollBtn.TextColor3, SubRagdollStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(120, 200, 255)
+                SubRagdollBtn.UIGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+                })
                 applyRagdoll(char, true)
             else
-                SubRagdollBtn.BackgroundColor3, SubRagdollBtn.TextColor3, SubRagdollStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
+                SubRagdollBtn.BackgroundColor3, SubRagdollBtn.TextColor3, SubRagdollStroke.Color = Color3.fromRGB(22, 30, 44), Color3.fromRGB(230, 240, 255), Color3.fromRGB(50, 68, 98)
+                SubRagdollBtn.UIGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+                })
                 applyRagdoll(char, false)
             end
         end
@@ -1508,9 +1728,17 @@ SubTPBtn.MouseButton1Click:Connect(function()
     pcall(function()
         State.ClickTPActive = not State.ClickTPActive
         if State.ClickTPActive then
-            SubTPBtn.BackgroundColor3, SubTPBtn.TextColor3, SubTPStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
+            SubTPBtn.BackgroundColor3, SubTPBtn.TextColor3, SubTPStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(120, 200, 255)
+            SubTPBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+            })
         else
-            SubTPBtn.BackgroundColor3, SubTPBtn.TextColor3, SubTPStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
+            SubTPBtn.BackgroundColor3, SubTPBtn.TextColor3, SubTPStroke.Color = Color3.fromRGB(22, 30, 44), Color3.fromRGB(230, 240, 255), Color3.fromRGB(50, 68, 98)
+            SubTPBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
         end
     end)
 end)
@@ -1525,25 +1753,37 @@ local function updateSafeSpotButtons()
         local count = State.SafeSpotCount or 3
         for i = 1, count do
             local btn = Instance.new("TextButton", SafeSpotContainer)
-            btn.Size = UDim2.new(0, 36, 0, 36)
+            btn.Size = UDim2.new(0, 38, 0, 38)
             btn.Position = UDim2.new(0.35 + ((i - 1) * 0.045), 0, 0.05, 0)
-            btn.BackgroundColor3 = Color3.fromRGB(20, 24, 32)
+            btn.BackgroundColor3 = Color3.fromRGB(22, 30, 44)
             btn.Text = "S" .. i
             btn.Font = Enum.Font.GothamBold
-            btn.TextColor3 = Color3.fromRGB(220, 230, 250)
+            btn.TextColor3 = Color3.fromRGB(230, 240, 255)
             btn.TextSize = 10
             btn.Active = true
             btn.Draggable = true
-            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 9)
             local stroke = Instance.new("UIStroke", btn)
-            stroke.Color = Color3.fromRGB(35, 42, 55)
+            stroke.Color = Color3.fromRGB(50, 68, 98)
             stroke.Thickness = 1.5
-            AddBounceEffect(btn, UDim2.new(0, 36, 0, 36))
+
+            local sGrad = Instance.new("UIGradient", btn)
+            sGrad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
+            sGrad.Rotation = 90
+
+            AddBounceEffect(btn, UDim2.new(0, 38, 0, 38))
 
             if State.SafeSpots[i] then
                 btn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
                 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                stroke.Color = Color3.fromRGB(100, 180, 255)
+                stroke.Color = Color3.fromRGB(120, 200, 255)
+                btn.UIGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+                })
                 btn.Text = "TP" .. i
             end
 
@@ -1556,7 +1796,11 @@ local function updateSafeSpotButtons()
                             State.SafeSpots[i] = hrp.CFrame
                             btn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
                             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                            stroke.Color = Color3.fromRGB(100, 180, 255)
+                            stroke.Color = Color3.fromRGB(120, 200, 255)
+                            btn.UIGradient.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+                                ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+                            })
                             btn.Text = "TP" .. i
                         else
                             hrp.CFrame = State.SafeSpots[i]
@@ -1573,9 +1817,17 @@ SubShiftLockBtn.MouseButton1Click:Connect(function()
     pcall(function()
         State.ShiftLockActive = not State.ShiftLockActive
         if State.ShiftLockActive then
-            SubShiftLockBtn.BackgroundColor3, SubShiftLockBtn.TextColor3, SubShiftLockStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
+            SubShiftLockBtn.BackgroundColor3, SubShiftLockBtn.TextColor3, SubShiftLockStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(120, 200, 255)
+            SubShiftLockBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+            })
         else
-            SubShiftLockBtn.BackgroundColor3, SubShiftLockBtn.TextColor3, SubShiftLockStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
+            SubShiftLockBtn.BackgroundColor3, SubShiftLockBtn.TextColor3, SubShiftLockStroke.Color = Color3.fromRGB(22, 30, 44), Color3.fromRGB(230, 240, 255), Color3.fromRGB(50, 68, 98)
+            SubShiftLockBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
             local char = LocalPlayer.Character
             if char and char:FindFirstChildOfClass("Humanoid") then char.Humanoid.AutoRotate = true end
         end
@@ -1588,10 +1840,18 @@ SubAutoClickBtn.MouseButton1Click:Connect(function()
     pcall(function()
         if State.AutoClickActive or State.AutoClickSelecting then
             State.AutoClickActive, State.AutoClickSelecting = false, false
-            SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
+            SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(22, 30, 44), Color3.fromRGB(230, 240, 255), Color3.fromRGB(50, 68, 98)
+            SubAutoClickBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
         else
             State.AutoClickSelecting = true
-            SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(240, 140, 0), Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 180, 50)
+            SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(255, 180, 50), Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 210, 100)
+            SubAutoClickBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 160, 0)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 100, 0))
+            })
         end
     end)
 end)
@@ -1604,7 +1864,11 @@ SubFakeLagBtn.MouseButton1Click:Connect(function()
         if char then
             local hrp = char:FindFirstChild("HumanoidRootPart")
             if State.FakeLagActive then
-                SubFakeLagBtn.BackgroundColor3, SubFakeLagBtn.TextColor3, SubFakeLagStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
+                SubFakeLagBtn.BackgroundColor3, SubFakeLagBtn.TextColor3, SubFakeLagStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(120, 200, 255)
+                SubFakeLagBtn.UIGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+                })
                 if hrp then
                     FakeLagSavedCFrame = hrp.CFrame
                     FakeLagSavedVelocities = {}
@@ -1619,7 +1883,11 @@ SubFakeLagBtn.MouseButton1Click:Connect(function()
                     end
                 end
             else
-                SubFakeLagBtn.BackgroundColor3, SubFakeLagBtn.TextColor3, SubFakeLagStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
+                SubFakeLagBtn.BackgroundColor3, SubFakeLagBtn.TextColor3, SubFakeLagStroke.Color = Color3.fromRGB(22, 30, 44), Color3.fromRGB(230, 240, 255), Color3.fromRGB(50, 68, 98)
+                SubFakeLagBtn.UIGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+                })
                 for _, part in pairs(char:GetDescendants()) do
                     if part:IsA("BasePart") then
                         part.Anchored = false
@@ -1640,8 +1908,16 @@ SubRewindBtn.MouseButton1Click:Connect(function()
         State.TimeRewindActive = not State.TimeRewindActive
         if State.TimeRewindActive then
             SubRewindBtn.BackgroundColor3, SubRewindBtn.TextColor3, SubRewindStroke.Color = Color3.fromRGB(160, 40, 220), Color3.fromRGB(255, 255, 255), Color3.fromRGB(210, 120, 255)
+            SubRewindBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(190, 60, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(130, 20, 180))
+            })
         else
-            SubRewindBtn.BackgroundColor3, SubRewindBtn.TextColor3, SubRewindStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
+            SubRewindBtn.BackgroundColor3, SubRewindBtn.TextColor3, SubRewindStroke.Color = Color3.fromRGB(22, 30, 44), Color3.fromRGB(230, 240, 255), Color3.fromRGB(50, 68, 98)
+            SubRewindBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
         end
     end)
 end)
@@ -1706,9 +1982,13 @@ MainTab:CreateToggle({
         SubFlyBtn.Visible = Value 
         if not Value then 
             State.FlyActive = false 
-            SubFlyBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
-            SubFlyBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
-            SubFlyStroke.Color = Color3.fromRGB(35, 42, 55) 
+            SubFlyBtn.BackgroundColor3 = Color3.fromRGB(22, 30, 44) 
+            SubFlyBtn.TextColor3 = Color3.fromRGB(230, 240, 255) 
+            SubFlyStroke.Color = Color3.fromRGB(50, 68, 98) 
+            SubFlyBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
             if flyBv then pcall(function() flyBv:Destroy() end) flyBv = nil end 
             if flyBg then pcall(function() flyBg:Destroy() end) flyBg = nil end 
             if flyHumanoid then flyHumanoid.PlatformStand = false end 
@@ -1725,9 +2005,13 @@ MainTab:CreateToggle({
         local char = LocalPlayer.Character 
         if not Value then 
             State.RagdollActive = false 
-            SubRagdollBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
-            SubRagdollBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
-            SubRagdollStroke.Color = Color3.fromRGB(35, 42, 55) 
+            SubRagdollBtn.BackgroundColor3 = Color3.fromRGB(22, 30, 44) 
+            SubRagdollBtn.TextColor3 = Color3.fromRGB(230, 240, 255) 
+            SubRagdollStroke.Color = Color3.fromRGB(50, 68, 98) 
+            SubRagdollBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
             if char then applyRagdoll(char, false) end 
         elseif Value and State.RagdollActive and char then 
             applyRagdoll(char, true) 
@@ -1775,9 +2059,13 @@ MainTab:CreateToggle({
         SubShiftLockBtn.Visible = Value 
         if not Value then 
             State.ShiftLockActive = false 
-            SubShiftLockBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
-            SubShiftLockBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
-            SubShiftLockStroke.Color = Color3.fromRGB(35, 42, 55) 
+            SubShiftLockBtn.BackgroundColor3 = Color3.fromRGB(22, 30, 44) 
+            SubShiftLockBtn.TextColor3 = Color3.fromRGB(230, 240, 255) 
+            SubShiftLockStroke.Color = Color3.fromRGB(50, 68, 98) 
+            SubShiftLockBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
             local char = LocalPlayer.Character 
             if char and char:FindFirstChildOfClass("Humanoid") then char.Humanoid.AutoRotate = true end 
         end
@@ -1854,9 +2142,13 @@ TeleportTab:CreateToggle({
         SubTPBtn.Visible = Value 
         if not Value then 
             State.ClickTPActive = false 
-            SubTPBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
-            SubTPBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
-            SubTPStroke.Color = Color3.fromRGB(35, 42, 55) 
+            SubTPBtn.BackgroundColor3 = Color3.fromRGB(22, 30, 44) 
+            SubTPBtn.TextColor3 = Color3.fromRGB(230, 240, 255) 
+            SubTPStroke.Color = Color3.fromRGB(50, 68, 98) 
+            SubTPBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
         end
     end
 })
@@ -1895,9 +2187,13 @@ TeleportTab:CreateToggle({
         if not Value then 
             State.AutoClickActive = false 
             State.AutoClickSelecting = false 
-            SubAutoClickBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
-            SubAutoClickBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
-            SubAutoClickStroke.Color = Color3.fromRGB(35, 42, 55) 
+            SubAutoClickBtn.BackgroundColor3 = Color3.fromRGB(22, 30, 44) 
+            SubAutoClickBtn.TextColor3 = Color3.fromRGB(230, 240, 255) 
+            SubAutoClickStroke.Color = Color3.fromRGB(50, 68, 98) 
+            SubAutoClickBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
         end
     end
 })
@@ -1910,9 +2206,13 @@ TeleportTab:CreateToggle({
         SubFakeLagBtn.Visible = Value 
         if not Value then 
             State.FakeLagActive = false 
-            SubFakeLagBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
-            SubFakeLagBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
-            SubFakeLagStroke.Color = Color3.fromRGB(35, 42, 55) 
+            SubFakeLagBtn.BackgroundColor3 = Color3.fromRGB(22, 30, 44) 
+            SubFakeLagBtn.TextColor3 = Color3.fromRGB(230, 240, 255) 
+            SubFakeLagStroke.Color = Color3.fromRGB(50, 68, 98) 
+            SubFakeLagBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
         end
     end
 })
@@ -1925,9 +2225,13 @@ TeleportTab:CreateToggle({
         SubRewindBtn.Visible = Value 
         if not Value then 
             State.TimeRewindActive = false 
-            SubRewindBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
-            SubRewindBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
-            SubRewindStroke.Color = Color3.fromRGB(35, 42, 55) 
+            SubRewindBtn.BackgroundColor3 = Color3.fromRGB(22, 30, 44) 
+            SubRewindBtn.TextColor3 = Color3.fromRGB(230, 240, 255) 
+            SubRewindStroke.Color = Color3.fromRGB(50, 68, 98) 
+            SubRewindBtn.UIGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))
+            })
         end
     end
 })
@@ -2049,7 +2353,7 @@ TeleportTab:CreateButton({
 -- Fling Control
 TeleportTab:CreateSection("Fling Control")
 
-TeleportTab:CreatePlayerDropdown({
+local FlingDropdownObj = TeleportTab:CreatePlayerDropdown({
     Name = "Select Target to Fling",
     CurrentOption = "None",
     Callback = function(Option)
@@ -2059,6 +2363,18 @@ TeleportTab:CreatePlayerDropdown({
                 for _, p in pairs(Players:GetPlayers()) do
                     if p ~= LocalPlayer and (p.DisplayName ~= "" and p.DisplayName or p.Name) == displayName then FlingTargets[p.Name] = p break end
                 end
+            end
+        end)
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "Clear All Fling Targets",
+    Callback = function()
+        pcall(function()
+            FlingTargets = {}
+            if FlingDropdownObj and FlingDropdownObj.SetText then
+                FlingDropdownObj.SetText("None")
             end
         end)
     end
@@ -2179,7 +2495,11 @@ table.insert(Connections, UserInputService.InputBegan:Connect(function(input, ga
             if State.AutoClick and State.AutoClickSelecting then
                 State.AutoClickPoint = Vector2.new(input.Position.X, input.Position.Y)
                 State.AutoClickSelecting, State.AutoClickActive = false, true
-                SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(100, 180, 255)
+                SubAutoClickBtn.BackgroundColor3, SubAutoClickBtn.TextColor3, SubAutoClickStroke.Color = Color3.fromRGB(0, 130, 255), Color3.fromRGB(255, 255, 255), Color3.fromRGB(120, 200, 255)
+                SubAutoClickBtn.UIGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 220))
+                })
                 return
             end
             if State.ClickTP and State.ClickTPActive then
@@ -2328,7 +2648,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                             pcall(function() hrp.AssemblyLinearVelocity = targetData.Velocity hum:ChangeState(targetData.State) end)
                         end
                     else
-                        State.TimeRewindActive = false SubRewindBtn.BackgroundColor3, SubRewindBtn.TextColor3, SubRewindStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
+                        State.TimeRewindActive = false SubRewindBtn.BackgroundColor3, SubRewindBtn.TextColor3, SubRewindStroke.Color = Color3.fromRGB(22, 30, 44), Color3.fromRGB(230, 240, 255), Color3.fromRGB(50, 68, 98) SubRewindBtn.UIGradient.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 42, 62)), ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 22, 34))})
                     end
                 end
             end
