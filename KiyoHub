@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Sharp Bright Floating Particles, Smooth Scale-Down, Zero Lag, Audio Separation)
+-- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -32,7 +32,7 @@ local function PlayUISound(soundId, volume)
     end)
 end
 
--- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + HẠT NHỎ SÁNG RÕ NÉT) ====================
+-- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + CẦU VỒNG CHẠY NỐI ĐUÔI + TỐI ƯU KHÔNG LAG) ====================
 local IntroGui = Instance.new("ScreenGui", ParentGui)
 IntroGui.Name = "KiyoHubIntroGui"
 IntroGui.ResetOnSpawn = false
@@ -44,31 +44,30 @@ IntroSound.Volume = 2
 IntroSound.Parent = IntroGui
 pcall(function() IntroSound:Play() end)
 
--- Container chứa các hạt trắng nhỏ nhưng cực kỳ sắc nét và sáng rõ
+-- Container chứa các hạt trắng nhỏ sắc nét
 local ParticleContainer = Instance.new("Folder", IntroGui)
 ParticleContainer.Name = "IntroParticles"
 
 local isIntroActive = true
 
--- Tạo hiệu ứng hạt nhỏ tinh tế nhưng sáng rực, không làm tăng kích thước thô
+-- Tạo hiệu ứng hạt nhỏ sáng rõ
 task.spawn(function()
     while isIntroActive do
         task.wait(0.12)
         if not isIntroActive then break end
         pcall(function()
             local particle = Instance.new("Frame", ParticleContainer)
-            local size = math.random(4, 6) -- Giữ kích thước nhỏ gọn, tinh tế
+            local size = math.random(4, 6)
             particle.Size = UDim2.new(0, size, 0, size)
             
             local startX = math.random(15, 85) / 100
             particle.Position = UDim2.new(startX, math.random(-100, 100), 1.15, 0)
-            particle.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Trắng tinh khiết tuyệt đối
-            particle.BackgroundTransparency = 0.05 -- Cực rõ, gần như không mờ
+            particle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            particle.BackgroundTransparency = 0.05
             particle.BorderSizePixel = 0
             
             Instance.new("UICorner", particle).CornerRadius = UDim.new(1, 0)
             
-            -- Thêm UIStroke để hạt có viền sáng sắc nét, nổi bật trên nền tối
             local pStroke = Instance.new("UIStroke", particle)
             pStroke.Color = Color3.fromRGB(255, 255, 255)
             pStroke.Transparency = 0.1
@@ -105,7 +104,6 @@ local IntroStroke = Instance.new("UIStroke", IntroFrame)
 IntroStroke.Color = Color3.fromRGB(0, 130, 255)
 IntroStroke.Thickness = 2
 
--- Logo Icon trong Intro
 local IntroLogo = Instance.new("ImageLabel", IntroFrame)
 IntroLogo.Size = UDim2.new(0, 42, 0, 42)
 IntroLogo.Position = UDim2.new(0.5, -21, 0, 16)
@@ -145,15 +143,37 @@ LoadBarBg.Size = UDim2.new(0.85, 0, 0, 8)
 LoadBarBg.Position = UDim2.new(0.075, 0, 0, 144)
 LoadBarBg.BackgroundColor3 = Color3.fromRGB(15, 20, 28)
 LoadBarBg.BorderSizePixel = 0
+LoadBarBg.ClipsDescendants = true
 Instance.new("UICorner", LoadBarBg).CornerRadius = UDim.new(1, 0)
 
-local LoadBarFill = Instance.new("Frame", LoadBarBg)
-LoadBarFill.Size = UDim2.new(0, 0, 1, 0)
-LoadBarFill.BackgroundColor3 = Color3.fromRGB(0, 140, 255)
-LoadBarFill.BorderSizePixel = 0
-Instance.new("UICorner", LoadBarFill).CornerRadius = UDim.new(1, 0)
+-- Thanh chứa hiệu ứng màu cầu vồng nối đuôi nhau chạy xuyên suốt
+local RainbowBar = Instance.new("Frame", LoadBarBg)
+RainbowBar.Size = UDim2.new(2, 0, 1, 0)
+RainbowBar.Position = UDim2.new(-1, 0, 0, 0)
+RainbowBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+RainbowBar.BorderSizePixel = 0
+Instance.new("UICorner", RainbowBar).CornerRadius = UDim.new(1, 0)
 
--- Hiệu ứng mở Intro mượt mà
+-- Dải màu cầu vồng nối đuôi liên tục
+local RainbowGradient = Instance.new("UIGradient", RainbowBar)
+RainbowGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+    ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255, 128, 0)),
+    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 255, 0)),
+    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 0)),
+    ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 200, 255)),
+    ColorSequenceKeypoint.new(0.83, Color3.fromRGB(128, 0, 255)),
+    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
+})
+
+local LoadBarFillMask = Instance.new("Frame", LoadBarBg)
+LoadBarFillMask.Size = UDim2.new(0, 0, 1, 0)
+LoadBarFillMask.BackgroundTransparency = 1
+LoadBarFillMask.BorderSizePixel = 0
+LoadBarFillMask.ClipsDescendants = true
+
+RainbowBar.Parent = LoadBarFillMask
+
 TweenService:Create(IntroFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
     Size = UDim2.new(0, 360, 0, 185),
     Position = UDim2.new(0.5, -180, 0.5, -92.5)
@@ -170,12 +190,10 @@ DropdownGui.ResetOnSpawn = false
 DropdownGui.DisplayOrder = 9999
 DropdownGui.Enabled = false
 
--- Thanh load chuẩn mượt mà trong đúng 4.3 giây
 task.spawn(function()
-    local hueTitle = 0
-    local hueStroke = 0
     local elapsed = 0
     local duration = 4.3
+    local rainbowOffset = 0
     
     while elapsed < duration do
         local dt = task.wait(0.03)
@@ -186,7 +204,10 @@ task.spawn(function()
         local percent = math.clamp(math.floor(progressCurve * 100), 0, 100)
         
         PercentLabel.Text = percent .. "%"
-        LoadBarFill.Size = UDim2.new(percent / 100, 0, 1, 0)
+        LoadBarFillMask.Size = UDim2.new(percent / 100, 0, 1, 0)
+        
+        rainbowOffset = (rainbowOffset + 0.025) % 1
+        RainbowGradient.Offset = Vector2.new(rainbowOffset, 0)
         
         if percent < 30 then
             StatusLabel.Text = "Loading Core Modules..."
@@ -197,12 +218,6 @@ task.spawn(function()
         else
             StatusLabel.Text = "Ready!"
         end
-        
-        hueTitle = (hueTitle + 0.03) % 1
-        TitleIntro.TextColor3 = Color3.fromHSV(hueTitle, 0.8, 1)
-        
-        hueStroke = (hueStroke + 0.02) % 1
-        IntroStroke.Color = Color3.fromHSV(hueStroke, 0.85, 1)
     end
     
     ScreenGui.Enabled = true
@@ -215,7 +230,6 @@ task.spawn(function()
     
     isIntroActive = false
     
-    -- Hiệu ứng thu nhỏ (Scale down) và biến mất trước khi xóa hoàn toàn
     TweenService:Create(IntroFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
         Size = UDim2.new(0, 0, 0, 0),
         Position = UDim2.new(0.5, 0, 0.5, 0),
@@ -223,7 +237,13 @@ task.spawn(function()
     }):Play()
     
     task.wait(0.25)
-    IntroGui:Destroy()
+    
+    -- XÓA SẠCH GỐC RỄ INTRO ĐỂ TRÁNH LAG
+    pcall(function()
+        ParticleContainer:ClearAllChildren()
+        ParticleContainer:Destroy()
+        IntroGui:Destroy()
+    end)
 end)
 
 local function InitializeKiyoHub()
