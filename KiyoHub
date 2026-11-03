@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Intro Border + Galaxy Aura Borders + Clear All Fling + Zero Lag)
+-- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -32,7 +32,7 @@ local function PlayUISound(soundId, volume)
     end)
 end
 
--- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + VIỀN & LOADING CẦU VỒNG CHẠY) ====================
+-- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + CẦU VỒNG CHẠY NỐI ĐUÔI + TỐI ƯU KHÔNG LAG) ====================
 local IntroGui = Instance.new("ScreenGui", ParentGui)
 IntroGui.Name = "KiyoHubIntroGui"
 IntroGui.ResetOnSpawn = false
@@ -98,20 +98,9 @@ IntroFrame.BorderSizePixel = 0
 IntroFrame.ClipsDescendants = false
 
 Instance.new("UICorner", IntroFrame).CornerRadius = UDim.new(0, 16)
-
--- Viền Intro chạy hiệu ứng cầu vồng
 local IntroStroke = Instance.new("UIStroke", IntroFrame)
-IntroStroke.Thickness = 2.5
-local IntroStrokeGradient = Instance.new("UIGradient", IntroStroke)
-IntroStrokeGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
-    ColorSequenceKeypoint.new(0.16, Color3.fromRGB(255, 128, 0)),
-    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 255, 0)),
-    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 0)),
-    ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 200, 255)),
-    ColorSequenceKeypoint.new(0.83, Color3.fromRGB(128, 0, 255)),
-    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))
-})
+IntroStroke.Color = Color3.fromRGB(0, 130, 255)
+IntroStroke.Thickness = 2
 
 local IntroLogo = Instance.new("ImageLabel", IntroFrame)
 IntroLogo.Size = UDim2.new(0, 42, 0, 42)
@@ -215,7 +204,6 @@ task.spawn(function()
         
         rainbowOffset = (rainbowOffset + 0.025) % 1
         RainbowGradient.Offset = Vector2.new(rainbowOffset, 0)
-        IntroStrokeGradient.Offset = Vector2.new(rainbowOffset, 0)
         
         if percent < 30 then
             StatusLabel.Text = "Loading Core Modules..."
@@ -390,27 +378,6 @@ local function AddBounceEffect(button, originalSize)
         pcall(function()
             TweenService:Create(button, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = originalSize}):Play()
         end)
-    end)
-end
-
--- Hàm tạo hiệu ứng viền Galaxy tối aura (Xanh - Tím bão hòa thấp quay vòng)
-local function applyGalaxyBorder(uiStrokeObj)
-    uiStrokeObj.Thickness = 1.6
-    local gradient = Instance.new("UIGradient", uiStrokeObj)
-    gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(15, 30, 75)),   -- Xanh dương đậm tối
-        ColorSequenceKeypoint.new(0.35, Color3.fromRGB(45, 20, 75)),   -- Xanh pha tím trầm
-        ColorSequenceKeypoint.new(0.70, Color3.fromRGB(70, 25, 95)),   -- Tím galaxy tối aura
-        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(15, 30, 75))    -- Quay vòng về Xanh đậm
-    })
-    
-    task.spawn(function()
-        local offset = 0
-        while uiStrokeObj and uiStrokeObj.Parent do
-            offset = (offset + 0.008) % 1
-            gradient.Offset = Vector2.new(offset, 0)
-            task.wait(0.05)
-        end
     end)
 end
 
@@ -839,7 +806,6 @@ local function applyFixLag(enable)
     end)
 end
 
--- FloatButton (giữ nguyên không áp dụng viền Galaxy theo yêu cầu)
 local FloatButton = Instance.new("ImageButton", ScreenGui)
 FloatButton.Name = "FloatButton"
 FloatButton.Size = UDim2.new(0, 42, 0, 42)
@@ -879,9 +845,9 @@ MainFrame.ClipsDescendants = true
 local MainCorner = Instance.new("UICorner", MainFrame)
 MainCorner.CornerRadius = UDim.new(0, 10)
 
--- Viền MainFrame mang hiệu ứng Galaxy Aura (Xanh - Tím tối)
 local MainStroke = Instance.new("UIStroke", MainFrame)
-applyGalaxyBorder(MainStroke)
+MainStroke.Color = Color3.fromRGB(30, 36, 48)
+MainStroke.Thickness = 1.5
 
 local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Size = UDim2.new(1, 0, 0, 36)
@@ -896,10 +862,6 @@ LogoImg.Size = UDim2.new(0, 22, 0, 22)
 LogoImg.Position = UDim2.new(0, 10, 0.5, -11)
 LogoImg.BackgroundTransparency = 1
 LogoImg.Image = "rbxassetid://11778372908"
-
--- Viền Logo nhỏ trên TopBar mang hiệu ứng Galaxy Aura
-local LogoStroke = Instance.new("UIStroke", LogoImg)
-applyGalaxyBorder(LogoStroke)
 
 local TitleLabel = Instance.new("TextLabel", TopBar)
 TitleLabel.Size = UDim2.new(0, 250, 1, 0)
@@ -929,7 +891,8 @@ UnloadDialog.BackgroundColor3 = Color3.fromRGB(15, 20, 28)
 UnloadDialog.BorderSizePixel = 0
 Instance.new("UICorner", UnloadDialog).CornerRadius = UDim.new(0, 10)
 local DialogStroke = Instance.new("UIStroke", UnloadDialog)
-applyGalaxyBorder(DialogStroke)
+DialogStroke.Color = Color3.fromRGB(45, 55, 70)
+DialogStroke.Thickness = 1.5
 
 local DialogTitle = Instance.new("TextLabel", UnloadDialog)
 DialogTitle.Size = UDim2.new(1, 0, 0, 40)
@@ -1234,9 +1197,9 @@ local function CreateTab(name)
         OptMenu.ClipsDescendants = true
 
         Instance.new("UICorner", OptMenu).CornerRadius = UDim.new(0, 8)
-        -- Viền menu con dạng Galaxy Aura
         local menuStroke = Instance.new("UIStroke", OptMenu)
-        applyGalaxyBorder(menuStroke)
+        menuStroke.Color = Color3.fromRGB(50, 60, 75)
+        menuStroke.Thickness = 1.5
 
         local menuTitle = Instance.new("TextLabel", OptMenu)
         menuTitle.Size = UDim2.new(1, -30, 0, 28)
@@ -1348,9 +1311,9 @@ local function CreateTab(name)
         PlayerMenu.ClipsDescendants = true
 
         Instance.new("UICorner", PlayerMenu).CornerRadius = UDim.new(0, 8)
-        -- Viền PlayerMenu dạng Galaxy Aura
         local menuStroke = Instance.new("UIStroke", PlayerMenu)
-        applyGalaxyBorder(menuStroke)
+        menuStroke.Color = Color3.fromRGB(50, 60, 75)
+        menuStroke.Thickness = 1.5
 
         local menuTitle = Instance.new("TextLabel", PlayerMenu)
         menuTitle.Size = UDim2.new(1, -30, 0, 28)
@@ -2116,9 +2079,8 @@ TeleportTab:CreatePlayerDropdown({
     end
 })
 
--- Nút Clear All Target cho Fling theo yêu cầu mới
 TeleportTab:CreateButton({
-    Name = "Clear All Fling Targets",
+    Name = "Clear Fling Targets",
     Callback = function()
         pcall(function()
             FlingTargets = {}
