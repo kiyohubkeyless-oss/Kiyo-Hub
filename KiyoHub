@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized)
+-- Roblox Delta Script - KIYO HUB (Combined with Mobile UI Editor inside Main Tab)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -16,6 +16,7 @@ if ParentGui:FindFirstChild("KiyoHubCustomUI") then ParentGui.KiyoHubCustomUI:De
 if ParentGui:FindFirstChild("KiyoHubDropdownGui") then ParentGui.KiyoHubDropdownGui:Destroy() end
 if ParentGui:FindFirstChild("KiyoHubIntroGui") then ParentGui.KiyoHubIntroGui:Destroy() end
 if ParentGui:FindFirstChild("KiyoHubUnloadGui") then ParentGui.KiyoHubUnloadGui:Destroy() end
+if ParentGui:FindFirstChild("KiyoHubUIEditorGui") then ParentGui.KiyoHubUIEditorGui:Destroy() end
 
 local Connections = {}
 
@@ -32,7 +33,7 @@ local function PlayUISound(soundId, volume)
     end)
 end
 
--- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + CẦU VỒNG CHẠY NỐI ĐUÔI + TỐI ƯU KHÔNG LAG) ====================
+-- ==================== INTRO LOADING SCREEN ====================
 local IntroGui = Instance.new("ScreenGui", ParentGui)
 IntroGui.Name = "KiyoHubIntroGui"
 IntroGui.ResetOnSpawn = false
@@ -286,6 +287,7 @@ local State = {
     FixLag = false,
     SpectateActive = false,
     TargetFling = false,
+    UIEditorActive = false, -- Trạng thái bật/tắt tính năng chỉnh sửa UI (Logic Script 2)
     WalkSpeed = 16,
     JumpPower = 50,
     Gravity = 196.2,
@@ -308,6 +310,15 @@ local FakeLagSavedCFrame = nil
 local FakeLagSavedVelocities = {}
 local OriginalXRayTransparency = {}
 local r6JointsData = {}
+
+-- Biến hệ thống UI Editor (Logic từ Script 2 tích hợp vào menu con Kiyo Hub)
+local UIEditorRuleMap = {}
+local UIEditorTrackedObjects = {}
+local SelectedCustomElement = nil
+local isDraggingUIElement = false
+local activeUIInput = nil
+local dragStartInputPos = nil
+local elementStartPos = nil
 
 local noclipEnabled = false
 local noclipConnection = nil
@@ -334,6 +345,7 @@ local function UnloadScript()
         if ParentGui:FindFirstChild("KiyoHubDropdownGui") then ParentGui.KiyoHubDropdownGui:Destroy() end
         if ParentGui:FindFirstChild("KiyoHubIntroGui") then ParentGui.KiyoHubIntroGui:Destroy() end
         if ParentGui:FindFirstChild("KiyoHubUnloadGui") then ParentGui.KiyoHubUnloadGui:Destroy() end
+        if ParentGui:FindFirstChild("KiyoHubUIEditorGui") then ParentGui.KiyoHubUIEditorGui:Destroy() end
     end)
 end
 
@@ -1478,6 +1490,304 @@ local function CreateTab(name)
 end
 
 local MainTab = CreateTab("Main")
+local VisualTab = CreateTab("Visuals")
+local TeleportTab = CreateTab("Teleport")
+local SpectateTab = CreateTab("Spectate")
+local ServerTab = CreateTab("Server")
+local InfoTab = CreateTab("Info")
+
+-- =========================================================================
+-- TÍCH HỢP LOGIC SCRIPT 2 VÀO MENU CON CHUẨN KIYO HUB (NẰM TRONG TAB MAIN)
+-- =========================================================================
+local UIEditorGui = Instance.new("ScreenGui", ParentGui)
+UIEditorGui.Name = "KiyoHubUIEditorGui"
+UIEditorGui.ResetOnSpawn = false
+UIEditorGui.DisplayOrder = 9999
+UIEditorGui.Enabled = false
+
+local UIEditorMenu = Instance.new("Frame", DropdownGui)
+UIEditorMenu.Name = "UIEditorMenu"
+UIEditorMenu.Size = UDim2.new(0, 0, 0, 0)
+UIEditorMenu.Position = UDim2.new(0.5, -90, 0.5, -75)
+UIEditorMenu.BackgroundColor3 = Color3.fromRGB(14, 18, 25)
+UIEditorMenu.Visible = false
+UIEditorMenu.Active = true
+UIEditorMenu.Draggable = true
+UIEditorMenu.ClipsDescendants = true
+
+Instance.new("UICorner", UIEditorMenu).CornerRadius = UDim.new(0, 8)
+local editorMenuStroke = Instance.new("UIStroke", UIEditorMenu)
+editorMenuStroke.Color = Color3.fromRGB(50, 60, 75)
+editorMenuStroke.Thickness = 1.5
+
+local editorTitle = Instance.new("TextLabel", UIEditorMenu)
+editorTitle.Size = UDim2.new(1, -30, 0, 28)
+editorTitle.Position = UDim2.new(0, 8, 0, 0)
+editorTitle.BackgroundTransparency = 1
+editorTitle.Text = "Mobile UI Editor"
+editorTitle.TextColor3 = Color3.fromRGB(210, 220, 235)
+editorTitle.Font = Enum.Font.GothamBold
+editorTitle.TextSize = 11
+editorTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local editorCloseBtn = Instance.new("TextButton", UIEditorMenu)
+editorCloseBtn.Size = UDim2.new(0, 20, 0, 20)
+editorCloseBtn.Position = UDim2.new(1, -24, 0, 4)
+editorCloseBtn.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
+editorCloseBtn.Text = "X"
+editorCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+editorCloseBtn.Font = Enum.Font.GothamBold
+editorCloseBtn.TextSize = 9
+Instance.new("UICorner", editorCloseBtn).CornerRadius = UDim.new(0, 4)
+AddBounceEffect(editorCloseBtn, UDim2.new(0, 20, 0, 20))
+
+editorCloseBtn.MouseButton1Click:Connect(function()
+    ToggleSubMenuAnimation(UIEditorMenu, false)
+end)
+
+local editorScrollList = Instance.new("ScrollingFrame", UIEditorMenu)
+editorScrollList.Size = UDim2.new(1, -8, 1, -34)
+editorScrollList.Position = UDim2.new(0, 4, 0, 30)
+editorScrollList.BackgroundTransparency = 1
+editorScrollList.CanvasSize = UDim2.new(0, 0, 0, 0)
+editorScrollList.ScrollBarThickness = 4
+
+local editorLayoutList = Instance.new("UIListLayout", editorScrollList)
+editorLayoutList.SortOrder = Enum.SortOrder.LayoutOrder
+editorLayoutList.Padding = UDim.new(0, 4)
+
+editorLayoutList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    editorScrollList.CanvasSize = UDim2.new(0, 0, 0, editorLayoutList.AbsoluteContentSize.Y + 8)
+end)
+
+local function createEditorMenuButton(name, color, callback)
+    local btn = Instance.new("TextButton", editorScrollList)
+    btn.Size = UDim2.new(1, -4, 0, 28)
+    btn.BackgroundColor3 = color or Color3.fromRGB(20, 25, 33)
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(240, 245, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 10
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+    AddBounceEffect(btn, UDim2.new(1, -4, 0, 28))
+    if callback then
+        btn.MouseButton1Click:Connect(callback)
+    end
+    return btn
+end
+
+-- Các hàm helper logic từ Script 2
+local function GetKey(obj)
+    local keyStr = obj.Name
+    local trait = ""
+    if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+        if obj.Text ~= "" then trait = trait .. "_" .. string.sub(obj.Text, 1, 10) end
+    end
+    if obj.Parent then
+        keyStr = obj.Parent.Name .. "_" .. keyStr
+    end
+    return keyStr .. trait
+end
+
+local function GetSafeVisualPosition(gui)
+    local parent = gui.Parent
+    if parent and parent:IsA("GuiObject") then
+        local pX, pY = parent.AbsolutePosition.X, parent.AbsolutePosition.Y
+        if parent:IsA("ScrollingFrame") then
+            pX = pX - parent.CanvasPosition.X
+            pY = pY - parent.CanvasPosition.Y
+        end
+        local aX, aY = gui.AnchorPoint.X, gui.AnchorPoint.Y
+        local w, h = gui.AbsoluteSize.X, gui.AbsoluteSize.Y
+        local dX, dY = gui.AbsolutePosition.X, gui.AbsolutePosition.Y
+        return UDim2.new(0, (dX - pX) + (aX * w), 0, (dY - pY) + (aY * h))
+    else
+        return gui.Position
+    end
+end
+
+-- Tạo nút bấm trong Tab Main để bật menu con UI Editor
+MainTab:CreateSection("UI Customizer Tools")
+MainTab:CreateButton({
+    Name = "Open Mobile UI Editor",
+    Callback = function()
+        ToggleSubMenuAnimation(UIEditorMenu, true)
+        UIEditorGui.Enabled = true
+    end
+})
+
+local TapShield = Instance.new("TextButton", UIEditorGui)
+TapShield.Size = UDim2.new(1, 0, 1, 0)
+TapShield.BackgroundTransparency = 1
+TapShield.Text = ""
+TapShield.Active = false
+TapShield.Visible = false
+
+local SelectionFrame = Instance.new("Frame", UIEditorGui)
+SelectionFrame.BackgroundTransparency = 1
+SelectionFrame.Visible = false
+SelectionFrame.ZIndex = 999999
+local SelectionStroke = Instance.new("UIStroke", SelectionFrame)
+SelectionStroke.Color = Color3.fromRGB(0, 255, 255)
+SelectionStroke.Thickness = 2
+
+createEditorMenuButton("Edit Mode: OFF", Color3.fromRGB(40, 50, 70), function(btn)
+    State.UIEditorActive = not State.UIEditorActive
+    if State.UIEditorActive then
+        btn.Text = "Edit Mode: ON"
+        btn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
+        TapShield.Visible = true
+        TapShield.Active = true
+    else
+        btn.Text = "Edit Mode: OFF"
+        btn.BackgroundColor3 = Color3.fromRGB(40, 50, 70)
+        TapShield.Visible = false
+        TapShield.Active = false
+        SelectionFrame.Visible = false
+        SelectedCustomElement = nil
+    end
+end)
+
+createEditorMenuButton("+ Size (+15)", Color3.fromRGB(30, 90, 160), function()
+    if SelectedCustomElement then
+        local key = GetKey(SelectedCustomElement)
+        local curSize = SelectedCustomElement.Size
+        if curSize == UDim2.new(0,0,0,0) then curSize = UDim2.new(0, SelectedCustomElement.AbsoluteSize.X, 0, SelectedCustomElement.AbsoluteSize.Y) end
+        if not UIEditorRuleMap[key] then
+            UIEditorRuleMap[key] = { Position = GetSafeVisualPosition(SelectedCustomElement), Size = curSize }
+        end
+        local newSize = UDim2.new(curSize.X.Scale, curSize.X.Offset + 15, curSize.Y.Scale, curSize.Y.Offset + 15)
+        UIEditorRuleMap[key].Size = newSize
+        SelectedCustomElement.Size = newSize
+    end
+end)
+
+createEditorMenuButton("- Size (-15)", Color3.fromRGB(30, 90, 160), function()
+    if SelectedCustomElement then
+        local key = GetKey(SelectedCustomElement)
+        local curSize = SelectedCustomElement.Size
+        if curSize == UDim2.new(0,0,0,0) then curSize = UDim2.new(0, SelectedCustomElement.AbsoluteSize.X, 0, SelectedCustomElement.AbsoluteSize.Y) end
+        if not UIEditorRuleMap[key] then
+            UIEditorRuleMap[key] = { Position = GetSafeVisualPosition(SelectedCustomElement), Size = curSize }
+        end
+        local newSize = UDim2.new(curSize.X.Scale, math.max(10, curSize.X.Offset - 15), curSize.Y.Scale, math.max(10, curSize.Y.Offset - 15))
+        UIEditorRuleMap[key].Size = newSize
+        SelectedCustomElement.Size = newSize
+    end
+end)
+
+createEditorMenuButton("Delete / Hide UI", Color3.fromRGB(180, 45, 45), function()
+    if SelectedCustomElement then
+        local key = GetKey(SelectedCustomElement)
+        if not UIEditorRuleMap[key] then
+            UIEditorRuleMap[key] = { Position = GetSafeVisualPosition(SelectedCustomElement), Size = SelectedCustomElement.Size }
+        end
+        UIEditorRuleMap[key].IsDeleted = true
+        SelectedCustomElement.Visible = false
+        SelectionFrame.Visible = false
+        SelectedCustomElement = nil
+    end
+end)
+
+createEditorMenuButton("Save Layout Config", Color3.fromRGB(40, 160, 80), function()
+    if writefile then
+        pcall(function()
+            if not isfolder("KiyoHubConfigs") then makefolder("KiyoHubConfigs") end
+            local saveTable = {}
+            for k, v in pairs(UIEditorRuleMap) do
+                saveTable[k] = {
+                    IsDeleted = v.IsDeleted,
+                    PosX = v.Position.X.Offset,
+                    PosY = v.Position.Y.Offset,
+                    ScaleX = v.Position.X.Scale,
+                    ScaleY = v.Position.Y.Scale
+                }
+            end
+            writefile("KiyoHubConfigs/SavedLayout.json", HttpService:JSONEncode(saveTable))
+        end)
+    end
+end)
+
+-- Sự kiện chọn và kéo thả element UI theo logic Script 2
+table.insert(Connections, UserInputService.InputBegan:Connect(function(input)
+    if not State.UIEditorActive then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        local success, elementsAtTap = pcall(function() return PlayerGui:GetGuiObjectsAtPosition(input.Position.X, input.Position.Y) end)
+        if success and elementsAtTap then
+            for _, gui in ipairs(elementsAtTap) do
+                if not gui:IsDescendantOf(ParentGui) and not gui:IsDescendantOf(DropdownGui) and (gui:IsA("GuiButton") or gui:IsA("Frame")) then
+                    SelectedCustomElement = gui
+                    isDraggingUIElement = true
+                    activeUIInput = input
+                    dragStartInputPos = input.Position
+                    
+                    local key = GetKey(gui)
+                    local curPos = GetSafeVisualPosition(gui)
+                    if not UIEditorRuleMap[key] then
+                        UIEditorRuleMap[key] = { Position = curPos, Size = gui.Size, IsDeleted = false }
+                    end
+                    elementStartPos = UIEditorRuleMap[key].Position
+                    UIEditorTrackedObjects[gui] = key
+                    
+                    SelectionFrame.Visible = true
+                    SelectionFrame.Size = UDim2.new(0, gui.AbsoluteSize.X, 0, gui.AbsoluteSize.Y)
+                    SelectionFrame.Position = UDim2.new(0, gui.AbsolutePosition.X, 0, gui.AbsolutePosition.Y)
+                    break
+                end
+            end
+        end
+    end
+end))
+
+table.insert(Connections, UserInputService.InputChanged:Connect(function(input)
+    if State.UIEditorActive and isDraggingUIElement and SelectedCustomElement and input == activeUIInput then
+        pcall(function()
+            local delta = input.Position - dragStartInputPos
+            local key = GetKey(SelectedCustomElement)
+            if UIEditorRuleMap[key] and elementStartPos then
+                local newPos = UDim2.new(elementStartPos.X.Scale, elementStartPos.X.Offset + delta.X, elementStartPos.Y.Scale, elementStartPos.Y.Offset + delta.Y)
+                UIEditorRuleMap[key].Position = newPos
+                SelectedCustomElement.Position = newPos
+                SelectionFrame.Position = UDim2.new(0, SelectedCustomElement.AbsolutePosition.X, 0, SelectedCustomElement.AbsolutePosition.Y)
+            end
+        end)
+    end
+end))
+
+table.insert(Connections, UserInputService.InputEnded:Connect(function(input)
+    if input == activeUIInput then
+        isDraggingUIElement = false
+        activeUIInput = nil
+    end
+end))
+
+-- RenderStepped duy trì vị trí phần tử UI & Selection Box (Zero Lag)
+table.insert(Connections, RunService.RenderStepped:Connect(function()
+    if State.UIEditorActive and SelectedCustomElement and SelectedCustomElement.Parent then
+        pcall(function()
+            SelectionFrame.Size = UDim2.new(0, SelectedCustomElement.AbsoluteSize.X, 0, SelectedCustomElement.AbsoluteSize.Y)
+            SelectionFrame.Position = UDim2.new(0, SelectedCustomElement.AbsolutePosition.X, 0, SelectedCustomElement.AbsolutePosition.Y)
+        end)
+    end
+    
+    for obj, key in pairs(UIEditorTrackedObjects) do
+        if obj.Parent and UIEditorRuleMap[key] then
+            local rule = UIEditorRuleMap[key]
+            if rule.IsDeleted then
+                if obj.Visible then obj.Visible = false end
+            else
+                if not (SelectedCustomElement == obj and isDraggingUIElement) then
+                    if obj.Position ~= rule.Position then obj.Position = rule.Position end
+                end
+            end
+        end
+    end
+end))
+
+-- =========================================================================
+-- PHẦN CÁC TAB KHÁC VÀ TÍNH NĂNG CŨ CỦA KIYO HUB
+-- =========================================================================
+
 local VisualTab = CreateTab("Visuals")
 local TeleportTab = CreateTab("Teleport")
 local SpectateTab = CreateTab("Spectate")
