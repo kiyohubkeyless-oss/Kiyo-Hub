@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation)
+-- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Added)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -282,6 +282,7 @@ local State = {
     RagdollActive = false,
     Fart = false,
     Stretched = false,
+    Headless = false,
     FixLag = false,
     SpectateActive = false,
     TargetFling = false,
@@ -369,7 +370,7 @@ end))
 
 local function AddBounceEffect(button, originalSize)
     button.MouseButton1Down:Connect(function()
-        PlayUISound(452267918, 1) -- Âm thanh 45.. cho bấm nút/dropdown thông thường
+        PlayUISound(452267918, 1)
         pcall(function()
             TweenService:Create(button, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset - 2, originalSize.Y.Scale, originalSize.Y.Offset - 2)}):Play()
         end)
@@ -454,6 +455,30 @@ local function applyRagdoll(char, enable)
                         end
                     end
                     r6JointsData[char] = nil
+                end
+            end
+        end
+    end)
+end
+
+local function applyHeadless(char, enable)
+    pcall(function()
+        if not char then return end
+        local head = char:FindFirstChild("Head")
+        if head then
+            if enable then
+                head.Transparency = 1
+                for _, child in pairs(head:GetChildren()) do
+                    if child:IsA("Decal") or child:IsA("SpecialMesh") then
+                        child.Transparency = 1
+                    end
+                end
+            else
+                head.Transparency = 0
+                for _, child in pairs(head:GetChildren()) do
+                    if child:IsA("Decal") or child:IsA("SpecialMesh") then
+                        child.Transparency = 0
+                    end
                 end
             end
         end
@@ -670,6 +695,7 @@ table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(newChar)
         State.RagdollActive = false
         if flyBv then pcall(function() flyBv:Destroy() end) flyBv = nil end
         if flyBg then pcall(function() flyBg:Destroy() end) flyBg = nil end
+        if State.Headless then applyHeadless(newChar, true) end
         if not State.SpectateActive and Camera and newChar:FindFirstChildOfClass("Humanoid") then
             Camera.CameraSubject = newChar:FindFirstChildOfClass("Humanoid")
         end
@@ -1101,7 +1127,7 @@ local function CreateTab(name)
         local toggled = data.CurrentValue or false
         local function updateToggle(val)
             toggled = val
-            PlayUISound(226892749, 1) -- Chỉ phát âm thanh 22.. khi bật/tắt tính năng
+            PlayUISound(226892749, 1)
             if toggled then
                 toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
                 circle:TweenPosition(UDim2.new(1, -16, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
@@ -1834,6 +1860,7 @@ MainTab:CreateInput({
 })
 
 VisualTab:CreateToggle({ Name = "Fart", CurrentValue = false, Callback = function(Value) State.Fart = Value SubFartBtn.Visible = Value end })
+VisualTab:CreateToggle({ Name = "Headless", CurrentValue = false, Callback = function(Value) State.Headless = Value local char = LocalPlayer.Character if char then applyHeadless(char, Value) end end })
 VisualTab:CreateToggle({ Name = "ESP Players", CurrentValue = false, Callback = function(Value) State.ESP = Value end })
 VisualTab:CreateToggle({ Name = "X-Ray", CurrentValue = false, Callback = function(Value) State.XRay = Value applyXRay(Value) end })
 VisualTab:CreateToggle({ Name = "Full Bright", CurrentValue = false, Callback = function(Value) State.FullBright = Value applyFullBright(Value) end })
@@ -2305,6 +2332,11 @@ end
 
 table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
     pcall(function()
+        if State.Headless then
+            local char = LocalPlayer.Character
+            if char then applyHeadless(char, true) end
+        end
+
         if State.SpectateActive and SpectateTarget and SpectateTarget.Character then
             local targetHum = SpectateTarget.Character:FindFirstChildOfClass("Humanoid")
             if targetHum and Camera then Camera.CameraSubject = targetHum end
