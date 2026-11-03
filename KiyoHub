@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation)
+-- Roblox Delta Script - KIYO HUB (Optimized UI Touch Hitboxes + Smooth Animation Fix)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -32,7 +32,7 @@ local function PlayUISound(soundId, volume)
     end)
 end
 
--- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + CẦU VỒNG CHẠY NỐI ĐUÔI + TỐI ƯU KHÔNG LAG) ====================
+-- ==================== INTRO LOADING SCREEN ====================
 local IntroGui = Instance.new("ScreenGui", ParentGui)
 IntroGui.Name = "KiyoHubIntroGui"
 IntroGui.ResetOnSpawn = false
@@ -281,6 +281,7 @@ local State = {
     Ragdoll = false,
     RagdollActive = false,
     Fart = false,
+    Headless = false,
     Stretched = false,
     FixLag = false,
     SpectateActive = false,
@@ -307,6 +308,7 @@ local FakeLagSavedCFrame = nil
 local FakeLagSavedVelocities = {}
 local OriginalXRayTransparency = {}
 local r6JointsData = {}
+local originalHeadTransparency = {}
 
 local noclipEnabled = false
 local noclipConnection = nil
@@ -367,16 +369,22 @@ table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(newChar)
     setupDeathSound(newChar)
 end))
 
-local function AddBounceEffect(button, originalSize)
+-- Sửa lỗi khựng nút & kẹt animation bằng cách dùng Tween độc lập không chặn luồng chính
+local function AddBounceEffect(button)
+    local activeTweenDown, activeTweenUp = nil, nil
     button.MouseButton1Down:Connect(function()
-        PlayUISound(452267918, 1) -- Âm thanh 45.. cho bấm nút/dropdown thông thường
+        PlayUISound(452267918, 1)
         pcall(function()
-            TweenService:Create(button, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset - 2, originalSize.Y.Scale, originalSize.Y.Offset - 2)}):Play()
+            if activeTweenUp then activeTweenUp:Cancel() end
+            activeTweenDown = TweenService:Create(button, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0.2})
+            activeTweenDown:Play()
         end)
     end)
     button.MouseButton1Up:Connect(function()
         pcall(function()
-            TweenService:Create(button, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = originalSize}):Play()
+            if activeTweenDown then activeTweenDown:Cancel() end
+            activeTweenUp = TweenService:Create(button, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
+            activeTweenUp:Play()
         end)
     end)
 end
@@ -460,6 +468,37 @@ local function applyRagdoll(char, enable)
     end)
 end
 
+local function applyHeadless(char, enable)
+    pcall(function()
+        if not char then return end
+        local head = char:FindFirstChild("Head")
+        if head then
+            if enable then
+                if originalHeadTransparency[head] == nil then
+                    originalHeadTransparency[head] = head.Transparency
+                end
+                head.Transparency = 1
+                for _, child in pairs(head:GetChildren()) do
+                    if child:IsA("Decal") or child:IsA("SpecialMesh") then
+                        child.Transparency = 1
+                    end
+                end
+            else
+                if originalHeadTransparency[head] ~= nil then
+                    head.Transparency = originalHeadTransparency[head]
+                else
+                    head.Transparency = 0
+                end
+                for _, child in pairs(head:GetChildren()) do
+                    if child:IsA("Decal") or child:IsA("SpecialMesh") then
+                        child.Transparency = 0
+                    end
+                end
+            end
+        end
+    end)
+end
+
 local function executeFart()
     pcall(function()
         local char = LocalPlayer.Character
@@ -513,11 +552,7 @@ local function SkidFling(TargetPlayer)
     local TCharacter = TargetPlayer.Character
     if not TCharacter then return end
     
-    local THumanoid
-    local TRootPart
-    local THead
-    local Accessory
-    local Handle
+    local THumanoid, TRootPart, THead, Accessory, Handle
     if TCharacter:FindFirstChildOfClass("Humanoid") then
         THumanoid = TCharacter:FindFirstChildOfClass("Humanoid")
     end
@@ -537,10 +572,7 @@ local function SkidFling(TargetPlayer)
         if RootPart.Velocity.Magnitude < 50 then
             getgenv().OldPos = RootPart.CFrame
         end
-        
-        if THumanoid and THumanoid.Sit then
-            return
-        end
+        if THumanoid and THumanoid.Sit then return end
         
         if THead then
             workspace.CurrentCamera.CameraSubject = THead
@@ -550,9 +582,7 @@ local function SkidFling(TargetPlayer)
             workspace.CurrentCamera.CameraSubject = THumanoid
         end
         
-        if not TCharacter:FindFirstChildWhichIsA("BasePart") then
-            return
-        end
+        if not TCharacter:FindFirstChildWhichIsA("BasePart") then return end
         
         local FPos = function(BasePart, Pos, Ang)
             RootPart.CFrame = CFrame.new(BasePart.Position) * Pos * Ang
@@ -567,43 +597,14 @@ local function SkidFling(TargetPlayer)
             local Angle = 0
             repeat
                 if RootPart and THumanoid then
-                    if BasePart.Velocity.Magnitude < 50 then
-                        Angle = Angle + 100
-                        FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle),0 ,0))
-                        task.wait()
-                        FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
-                        task.wait()
-                        FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle),0 ,0))
-                        task.wait()
-                        FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
-                        task.wait()
-                        FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection, CFrame.Angles(math.rad(Angle),0 ,0))
-                        task.wait()
-                        FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection, CFrame.Angles(math.rad(Angle), 0, 0))
-                        task.wait()
-                    else
-                        FPos(BasePart, CFrame.new(0, 1.5, THumanoid.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0))
-                        task.wait()
-                        FPos(BasePart, CFrame.new(0, -1.5, -THumanoid.WalkSpeed), CFrame.Angles(0, 0, 0))
-                        task.wait()
-                        FPos(BasePart, CFrame.new(0, 1.5, THumanoid.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0))
-                        task.wait()
-                        
-                        FPos(BasePart, CFrame.new(0, -1.5, 0), CFrame.Angles(math.rad(90), 0, 0))
-                        task.wait()
-                        FPos(BasePart, CFrame.new(0, -1.5, 0), CFrame.Angles(0, 0, 0))
-                        task.wait()
-                        FPos(BasePart, CFrame.new(0, -1.5, 0), CFrame.Angles(math.rad(90), 0, 0))
-                        task.wait()
-                        FPos(BasePart, CFrame.new(0, -1.5, 0), CFrame.Angles(0, 0, 0))
-                        task.wait()
-                    end
+                    Angle = Angle + 100
+                    FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection * 2, CFrame.Angles(math.rad(Angle), 0, 0))
+                    task.wait()
                 end
             until Time + TimeToWait < tick() or not FlingActive
         end
         
         workspace.FallenPartsDestroyHeight = 0/0
-        
         local BV = Instance.new("BodyVelocity")
         BV.Parent = RootPart
         BV.Velocity = Vector3.new(0, 0, 0)
@@ -611,15 +612,9 @@ local function SkidFling(TargetPlayer)
         
         Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
         
-        if TRootPart then
-            SFBasePart(TRootPart)
-        elseif THead then
-            SFBasePart(THead)
-        elseif Handle then
-            SFBasePart(Handle)
-        else
-            return
-        end
+        if TRootPart then SFBasePart(TRootPart)
+        elseif THead then SFBasePart(THead)
+        elseif Handle then SFBasePart(Handle) end
         
         BV:Destroy()
         Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
@@ -630,11 +625,6 @@ local function SkidFling(TargetPlayer)
                 RootPart.CFrame = getgenv().OldPos * CFrame.new(0, .5, 0)
                 Character:SetPrimaryPartCFrame(getgenv().OldPos * CFrame.new(0, .5, 0))
                 Humanoid:ChangeState("GettingUp")
-                for _, part in pairs(Character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.Velocity, part.RotVelocity = Vector3.new(), Vector3.new()
-                    end
-                end
                 task.wait()
             until (RootPart.Position - getgenv().OldPos.p).Magnitude < 25
             workspace.FallenPartsDestroyHeight = getgenv().FPDH
@@ -673,6 +663,7 @@ table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(newChar)
         if not State.SpectateActive and Camera and newChar:FindFirstChildOfClass("Humanoid") then
             Camera.CameraSubject = newChar:FindFirstChildOfClass("Humanoid")
         end
+        if State.Headless then applyHeadless(newChar, true) end
     end)
 end))
 
@@ -743,9 +734,7 @@ local function isProtectedObject(obj)
             if p.Character and obj:IsDescendantOf(p.Character) then return true end
         end
         local model = obj:FindFirstAncestorOfClass("Model")
-        if model and model:FindFirstChildOfClass("Humanoid") then
-            return true
-        end
+        if model and model:FindFirstChildOfClass("Humanoid") then return true end
         if obj:FindFirstChild("UniversalESP") or obj.Name == "UniversalESP" or obj.Name == "ESPNameTag" then return true end
         return false
     end)
@@ -755,7 +744,6 @@ end
 local function cleanObject(obj)
     pcall(function()
         if not State.FixLag or isProtectedObject(obj) then return end
-        
         if obj:IsA("BasePart") then
             if obj.Size.Magnitude < 12 and not obj.Anchored and obj.Transparency < 1 then
                 pcall(function() obj:Destroy() end)
@@ -779,27 +767,16 @@ local function applyFixLag(enable)
             local existingSky = Lighting:FindFirstChildOfClass("Sky")
             if not existingSky then existingSky = Instance.new("Sky", Lighting) end
             existingSky.SkyboxBk, existingSky.SkyboxDn, existingSky.SkyboxFt, existingSky.SkyboxLf, existingSky.SkyboxRt, existingSky.SkyboxUp = "rbxassetid://0", "rbxassetid://0", "rbxassetid://0", "rbxassetid://0", "rbxassetid://0", "rbxassetid://0"
-            
-            for _, obj in pairs(workspace:GetDescendants()) do
-                cleanObject(obj)
-            end
-            
+            for _, obj in pairs(workspace:GetDescendants()) do cleanObject(obj) end
             fixLagConnection = workspace.DescendantAdded:Connect(function(obj)
                 if not State.FixLag then return end
-                task.defer(function()
-                    cleanObject(obj)
-                end)
+                task.defer(function() cleanObject(obj) end)
             end)
             table.insert(Connections, fixLagConnection)
         else
-            if fixLagConnection then
-                fixLagConnection:Disconnect()
-                fixLagConnection = nil
-            end
+            if fixLagConnection then fixLagConnection:Disconnect() fixLagConnection = nil end
             for part, mat in pairs(OriginalPartMaterials) do
-                if part and part.Parent then
-                    pcall(function() part.Material = mat part.CastShadow = true end)
-                end
+                if part and part.Parent then pcall(function() part.Material = mat part.CastShadow = true end) end
             end
             OriginalPartMaterials = {}
         end
@@ -814,22 +791,13 @@ FloatButton.BackgroundColor3 = Color3.fromRGB(15, 18, 24)
 FloatButton.Image = "rbxassetid://11778372908"
 FloatButton.Active = true
 FloatButton.Draggable = true
-
-local FloatCorner = Instance.new("UICorner", FloatButton)
-FloatCorner.CornerRadius = UDim.new(1, 0)
+Instance.new("UICorner", FloatButton).CornerRadius = UDim.new(1, 0)
 
 local FloatStroke = Instance.new("UIStroke", FloatButton)
 FloatStroke.Color = Color3.fromRGB(35, 42, 55)
 FloatStroke.Thickness = 1.5
 
-FloatButton.MouseButton1Down:Connect(function()
-    PlayUISound(452267918, 1)
-    TweenService:Create(FloatButton, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 36, 0, 36)}):Play()
-end)
-
-FloatButton.MouseButton1Up:Connect(function()
-    TweenService:Create(FloatButton, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 42, 0, 42)}):Play()
-end)
+FloatButton.MouseButton1Down:Connect(function() PlayUISound(452267918, 1) end)
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
@@ -840,11 +808,9 @@ MainFrame.BorderSizePixel = 0
 MainFrame.Visible = false
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.ClipsDescendants = true
+MainFrame.ClipsDescendants = false -- Đảm bảo không bị cắt mất vùng viền nút bấm
 
-local MainCorner = Instance.new("UICorner", MainFrame)
-MainCorner.CornerRadius = UDim.new(0, 10)
-
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Color = Color3.fromRGB(30, 36, 48)
 MainStroke.Thickness = 1.5
@@ -853,9 +819,7 @@ local TopBar = Instance.new("Frame", MainFrame)
 TopBar.Size = UDim2.new(1, 0, 0, 36)
 TopBar.BackgroundColor3 = Color3.fromRGB(17, 21, 28)
 TopBar.BorderSizePixel = 0
-
-local TopCorner = Instance.new("UICorner", TopBar)
-TopCorner.CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
 
 local LogoImg = Instance.new("ImageLabel", TopBar)
 LogoImg.Size = UDim2.new(0, 22, 0, 22)
@@ -921,7 +885,7 @@ YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 YesBtn.Font = Enum.Font.GothamBold
 YesBtn.TextSize = 11
 Instance.new("UICorner", YesBtn).CornerRadius = UDim.new(0, 6)
-AddBounceEffect(YesBtn, UDim2.new(0, 115, 0, 32))
+AddBounceEffect(YesBtn)
 
 local NoBtn = Instance.new("TextButton", UnloadDialog)
 NoBtn.Size = UDim2.new(0, 115, 0, 32)
@@ -932,15 +896,10 @@ NoBtn.TextColor3 = Color3.fromRGB(220, 230, 250)
 NoBtn.Font = Enum.Font.GothamBold
 NoBtn.TextSize = 11
 Instance.new("UICorner", NoBtn).CornerRadius = UDim.new(0, 6)
-AddBounceEffect(NoBtn, UDim2.new(0, 115, 0, 32))
+AddBounceEffect(NoBtn)
 
-NoBtn.MouseButton1Click:Connect(function()
-    UnloadGui.Enabled = false
-end)
-
-YesBtn.MouseButton1Click:Connect(function()
-    UnloadScript()
-end)
+NoBtn.MouseButton1Click:Connect(function() UnloadGui.Enabled = false end)
+YesBtn.MouseButton1Click:Connect(function() UnloadScript() end)
 
 local CloseBtn = Instance.new("TextButton", TopBar)
 CloseBtn.Size = UDim2.new(0, 26, 0, 26)
@@ -951,7 +910,7 @@ CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.TextSize = 11
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
-AddBounceEffect(CloseBtn, UDim2.new(0, 26, 0, 26))
+AddBounceEffect(CloseBtn)
 
 CloseBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
@@ -978,6 +937,7 @@ TabListFrame.Position = UDim2.new(0, 0, 0, 40)
 TabListFrame.BackgroundTransparency = 1
 TabListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 TabListFrame.ScrollBarThickness = 2
+TabListFrame.ClipsDescendants = false
 
 local UIListLayoutTabs = Instance.new("UIListLayout", TabListFrame)
 UIListLayoutTabs.SortOrder = Enum.SortOrder.LayoutOrder
@@ -987,6 +947,7 @@ local ContainerHolder = Instance.new("Frame", MainFrame)
 ContainerHolder.Size = UDim2.new(1, -115, 1, -42)
 ContainerHolder.Position = UDim2.new(0, 115, 0, 40)
 ContainerHolder.BackgroundTransparency = 1
+ContainerHolder.ClipsDescendants = false
 
 local Tabs = {}
 local activeTab = nil
@@ -999,9 +960,7 @@ local function ToggleSubMenuAnimation(menuFrame, show)
         TweenService:Create(menuFrame, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = targetSize}):Play()
     else
         TweenService:Create(menuFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
-        task.delay(0.15, function()
-            menuFrame.Visible = false
-        end)
+        task.delay(0.15, function() menuFrame.Visible = false end)
     end
 end
 
@@ -1012,6 +971,7 @@ local function CreateTab(name)
     tabScroll.Visible = false
     tabScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
     tabScroll.ScrollBarThickness = 3
+    tabScroll.ClipsDescendants = false
     
     local listLayout = Instance.new("UIListLayout", tabScroll)
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1030,7 +990,7 @@ local function CreateTab(name)
     tabBtn.Font = Enum.Font.GothamMedium
     tabBtn.TextSize = 11
     Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
-    AddBounceEffect(tabBtn, UDim2.new(1, -8, 0, 28))
+    AddBounceEffect(tabBtn)
     
     tabBtn.MouseButton1Click:Connect(function()
         for _, t in pairs(Tabs) do
@@ -1058,6 +1018,7 @@ local function CreateTab(name)
         local frame = Instance.new("Frame", tabScroll)
         frame.Size = UDim2.new(1, -8, 0, 30)
         frame.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
+        frame.ClipsDescendants = false
         Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
         
         local stroke = Instance.new("UIStroke", frame)
@@ -1081,17 +1042,6 @@ local function CreateTab(name)
         toggleBtn.Text = ""
         Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
         
-        toggleBtn.MouseButton1Down:Connect(function()
-            pcall(function()
-                TweenService:Create(toggleBtn, TweenInfo.new(0.04, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 28, 0, 14)}):Play()
-            end)
-        end)
-        toggleBtn.MouseButton1Up:Connect(function()
-            pcall(function()
-                TweenService:Create(toggleBtn, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 32, 0, 18)}):Play()
-            end)
-        end)
-        
         local circle = Instance.new("Frame", toggleBtn)
         circle.Size = UDim2.new(0, 14, 0, 14)
         circle.Position = UDim2.new(0, 2, 0.5, -7)
@@ -1101,7 +1051,7 @@ local function CreateTab(name)
         local toggled = data.CurrentValue or false
         local function updateToggle(val)
             toggled = val
-            PlayUISound(226892749, 1) -- Chỉ phát âm thanh 22.. khi bật/tắt tính năng
+            PlayUISound(226892749, 1)
             if toggled then
                 toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
                 circle:TweenPosition(UDim2.new(1, -16, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
@@ -1114,9 +1064,7 @@ local function CreateTab(name)
         
         if toggled then updateToggle(true) end
         
-        toggleBtn.MouseButton1Click:Connect(function()
-            updateToggle(not toggled)
-        end)
+        toggleBtn.MouseButton1Click:Connect(function() updateToggle(not toggled) end)
     end
     
     function api:CreateInput(data)
@@ -1184,7 +1132,7 @@ local function CreateTab(name)
         dropdownBtn.Font = Enum.Font.Gotham
         dropdownBtn.TextSize = 10
         Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 4)
-        AddBounceEffect(dropdownBtn, UDim2.new(0.55, 0, 0, 20))
+        AddBounceEffect(dropdownBtn)
 
         local OptMenu = Instance.new("Frame", DropdownGui)
         OptMenu.Name = "OptMenu_" .. math.random(1000, 9999)
@@ -1194,7 +1142,7 @@ local function CreateTab(name)
         OptMenu.Visible = false
         OptMenu.Active = true
         OptMenu.Draggable = true
-        OptMenu.ClipsDescendants = true
+        OptMenu.ClipsDescendants = false
 
         Instance.new("UICorner", OptMenu).CornerRadius = UDim.new(0, 8)
         local menuStroke = Instance.new("UIStroke", OptMenu)
@@ -1220,11 +1168,9 @@ local function CreateTab(name)
         subCloseBtn.Font = Enum.Font.GothamBold
         subCloseBtn.TextSize = 9
         Instance.new("UICorner", subCloseBtn).CornerRadius = UDim.new(0, 4)
-        AddBounceEffect(subCloseBtn, UDim2.new(0, 20, 0, 20))
+        AddBounceEffect(subCloseBtn)
 
-        subCloseBtn.MouseButton1Click:Connect(function()
-            ToggleSubMenuAnimation(OptMenu, false)
-        end)
+        subCloseBtn.MouseButton1Click:Connect(function() ToggleSubMenuAnimation(OptMenu, false) end)
 
         local scrollList = Instance.new("ScrollingFrame", OptMenu)
         scrollList.Size = UDim2.new(1, -8, 1, -34)
@@ -1250,7 +1196,7 @@ local function CreateTab(name)
             optBtn.Font = Enum.Font.GothamMedium
             optBtn.TextSize = 10
             Instance.new("UICorner", optBtn).CornerRadius = UDim.new(0, 5)
-            AddBounceEffect(optBtn, UDim2.new(1, -4, 0, 26))
+            AddBounceEffect(optBtn)
             
             optBtn.MouseButton1Click:Connect(function()
                 dropdownBtn.Text = tostring(optName)
@@ -1260,11 +1206,8 @@ local function CreateTab(name)
         end
 
         dropdownBtn.MouseButton1Click:Connect(function()
-            if not OptMenu.Visible then
-                ToggleSubMenuAnimation(OptMenu, true)
-            else
-                ToggleSubMenuAnimation(OptMenu, false)
-            end
+            if not OptMenu.Visible then ToggleSubMenuAnimation(OptMenu, true)
+            else ToggleSubMenuAnimation(OptMenu, false) end
         end)
     end
     
@@ -1297,7 +1240,7 @@ local function CreateTab(name)
         dropdownBtn.Font = Enum.Font.Gotham
         dropdownBtn.TextSize = 10
         Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 4)
-        AddBounceEffect(dropdownBtn, UDim2.new(0.55, 0, 0, 20))
+        AddBounceEffect(dropdownBtn)
 
         local PlayerMenu = Instance.new("Frame", DropdownGui)
         PlayerMenu.Name = "PlayerMenu_" .. math.random(1000, 9999)
@@ -1307,7 +1250,7 @@ local function CreateTab(name)
         PlayerMenu.Visible = false
         PlayerMenu.Active = true
         PlayerMenu.Draggable = true
-        PlayerMenu.ClipsDescendants = true
+        PlayerMenu.ClipsDescendants = false
 
         Instance.new("UICorner", PlayerMenu).CornerRadius = UDim.new(0, 8)
         local menuStroke = Instance.new("UIStroke", PlayerMenu)
@@ -1333,11 +1276,9 @@ local function CreateTab(name)
         subCloseBtn.Font = Enum.Font.GothamBold
         subCloseBtn.TextSize = 9
         Instance.new("UICorner", subCloseBtn).CornerRadius = UDim.new(0, 4)
-        AddBounceEffect(subCloseBtn, UDim2.new(0, 20, 0, 20))
+        AddBounceEffect(subCloseBtn)
 
-        subCloseBtn.MouseButton1Click:Connect(function()
-            ToggleSubMenuAnimation(PlayerMenu, false)
-        end)
+        subCloseBtn.MouseButton1Click:Connect(function() ToggleSubMenuAnimation(PlayerMenu, false) end)
 
         local scrollList = Instance.new("ScrollingFrame", PlayerMenu)
         scrollList.Size = UDim2.new(1, -8, 1, -34)
@@ -1355,9 +1296,7 @@ local function CreateTab(name)
         end)
 
         local function populateList()
-            for _, c in pairs(scrollList:GetChildren()) do
-                if c:IsA("TextButton") then c:Destroy() end
-            end
+            for _, c in pairs(scrollList:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
             
             local noneBtn = Instance.new("TextButton", scrollList)
             noneBtn.Size = UDim2.new(1, -4, 0, 26)
@@ -1367,7 +1306,7 @@ local function CreateTab(name)
             noneBtn.Font = Enum.Font.GothamMedium
             noneBtn.TextSize = 10
             Instance.new("UICorner", noneBtn).CornerRadius = UDim.new(0, 5)
-            AddBounceEffect(noneBtn, UDim2.new(1, -4, 0, 26))
+            AddBounceEffect(noneBtn)
             noneBtn.MouseButton1Click:Connect(function()
                 dropdownBtn.Text = "None"
                 ToggleSubMenuAnimation(PlayerMenu, false)
@@ -1384,7 +1323,7 @@ local function CreateTab(name)
                     pBtn.Font = Enum.Font.GothamMedium
                     pBtn.TextSize = 10
                     Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 5)
-                    AddBounceEffect(pBtn, UDim2.new(1, -4, 0, 26))
+                    AddBounceEffect(pBtn)
                     
                     pBtn.MouseButton1Click:Connect(function()
                         dropdownBtn.Text = p.DisplayName ~= "" and p.DisplayName or p.Name
@@ -1396,12 +1335,8 @@ local function CreateTab(name)
         end
 
         dropdownBtn.MouseButton1Click:Connect(function()
-            if not PlayerMenu.Visible then
-                populateList()
-                ToggleSubMenuAnimation(PlayerMenu, true)
-            else
-                ToggleSubMenuAnimation(PlayerMenu, false)
-            end
+            if not PlayerMenu.Visible then populateList() ToggleSubMenuAnimation(PlayerMenu, true)
+            else ToggleSubMenuAnimation(PlayerMenu, false) end
         end)
     end
     
@@ -1414,7 +1349,7 @@ local function CreateTab(name)
         btn.Font = Enum.Font.GothamBold
         btn.TextSize = 11
         Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-        AddBounceEffect(btn, UDim2.new(1, -8, 0, 30))
+        AddBounceEffect(btn)
         
         local stroke = Instance.new("UIStroke", btn)
         stroke.Color = Color3.fromRGB(30, 36, 48)
@@ -1465,7 +1400,7 @@ local function createSubButton(name, text, pos, size)
     local stroke = Instance.new("UIStroke", btn)
     stroke.Color = Color3.fromRGB(35, 42, 55)
     stroke.Thickness = 1.5
-    AddBounceEffect(btn, btnSize)
+    AddBounceEffect(btn)
     return btn, stroke
 end
 
@@ -1550,7 +1485,7 @@ local function updateSafeSpotButtons()
             local stroke = Instance.new("UIStroke", btn)
             stroke.Color = Color3.fromRGB(35, 42, 55)
             stroke.Thickness = 1.5
-            AddBounceEffect(btn, UDim2.new(0, 36, 0, 36))
+            AddBounceEffect(btn)
 
             if State.SafeSpots[i] then
                 btn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
@@ -1688,10 +1623,7 @@ local function applyXRay(enable)
                             isPlayerPart = true
                         else
                             for _, p in pairs(Players:GetPlayers()) do
-                                if p.Character and part:IsDescendantOf(p.Character) then
-                                    isPlayerPart = true
-                                    break
-                                end
+                                if p.Character and part:IsDescendantOf(p.Character) then isPlayerPart = true break end
                             end
                         end
                         if not isPlayerPart then
@@ -1756,7 +1688,7 @@ MainTab:CreateToggle({
    Callback = function(Value)
       noclipEnabled = Value
       if noclipEnabled then
-         noclipConnection = game:GetService("RunService").Stepped:Connect(function()
+         noclipConnection = RunService.Stepped:Connect(function()
             pcall(function()
                 if noclipEnabled and game.Players.LocalPlayer.Character then
                    for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
@@ -1834,6 +1766,15 @@ MainTab:CreateInput({
 })
 
 VisualTab:CreateToggle({ Name = "Fart", CurrentValue = false, Callback = function(Value) State.Fart = Value SubFartBtn.Visible = Value end })
+VisualTab:CreateToggle({
+    Name = "Headless",
+    CurrentValue = false,
+    Callback = function(Value)
+        State.Headless = Value
+        local char = LocalPlayer.Character
+        if char then applyHeadless(char, Value) end
+    end
+})
 VisualTab:CreateToggle({ Name = "ESP Players", CurrentValue = false, Callback = function(Value) State.ESP = Value end })
 VisualTab:CreateToggle({ Name = "X-Ray", CurrentValue = false, Callback = function(Value) State.XRay = Value applyXRay(Value) end })
 VisualTab:CreateToggle({ Name = "Full Bright", CurrentValue = false, Callback = function(Value) State.FullBright = Value applyFullBright(Value) end })
@@ -1847,13 +1788,9 @@ VisualTab:CreateDropdown({
     Callback = function(Option)
         pcall(function()
             local choice = Option
-            if choice == "Sunset" then 
-                Lighting.ClockTime, Lighting.Brightness = 18, 1
-            elseif choice == "Night" then 
-                Lighting.ClockTime, Lighting.Brightness = 0, 0.5
-            else 
-                Lighting.ClockTime, Lighting.Brightness = OriginalLighting.ClockTime, OriginalLighting.Brightness
-            end
+            if choice == "Sunset" then Lighting.ClockTime, Lighting.Brightness = 18, 1
+            elseif choice == "Night" then Lighting.ClockTime, Lighting.Brightness = 0, 0.5
+            else Lighting.ClockTime, Lighting.Brightness = OriginalLighting.ClockTime, OriginalLighting.Brightness end
         end)
     end
 })
@@ -2268,6 +2205,7 @@ local hue = 0
 local loopTimer = 0
 local espUpdateTimer = 0
 local antiTouchTimer = 0
+local headCheckTimer = 0
 
 local function getClosestPlayerToHead()
     local closestPlayer = nil
@@ -2412,6 +2350,16 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
         end
 
         if not State.Aimbot and workspace.CurrentCamera and not State.SpectateActive then workspace.CurrentCamera.FieldOfView = State.FOV end
+
+        if State.Headless then
+            headCheckTimer = headCheckTimer + delta
+            if headCheckTimer >= 0.2 then
+                headCheckTimer = 0
+                pcall(function()
+                    if LocalPlayer.Character then applyHeadless(LocalPlayer.Character, true) end
+                end)
+            end
+        end
 
         espUpdateTimer = espUpdateTimer + delta
         if State.ESP then
