@@ -110,7 +110,7 @@ local IntroLogo = Instance.new("ImageLabel", IntroFrame)
 IntroLogo.Size = UDim2.new(0, 42, 0, 42)
 IntroLogo.Position = UDim2.new(0.5, -21, 0, 16)
 IntroLogo.BackgroundTransparency = 1
-IntroLogo.Image = "rbxassetid://11778372908"
+IntroLogo.Image = "rbxassetid://86944445105434"
 
 local TitleIntro = Instance.new("TextLabel", IntroFrame)
 TitleIntro.Size = UDim2.new(1, 0, 0, 30)
@@ -627,7 +627,7 @@ local function SkidFling(TargetPlayer)
     end
 end
 
-local flySpeed = 60
+local flySpeed = 65
 local flyBv, flyBg
 local flyCharacter, flyHumanoid, flyRootPart
 
@@ -852,7 +852,7 @@ local TitleLabel = Instance.new("TextLabel", TopBar)
 TitleLabel.Size = UDim2.new(0, 250, 1, 0)
 TitleLabel.Position = UDim2.new(0, 40, 0, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "Kiyo Hub | Custom UI"
+TitleLabel.Text = "Kiyo Hub"
 TitleLabel.TextColor3 = Color3.fromRGB(230, 235, 245)
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 13
@@ -1736,7 +1736,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({ Name = "Aimbot", CurrentValue = false, Callback = function(Value) State.Aimbot = Value end })
-MainTab:CreateToggle({ Name = "InfJump", CurrentValue = false, Callback = function(Value) State.InfJump = Value end })
+MainTab:CreateToggle({ Name = "Inf Jump", CurrentValue = false, Callback = function(Value) State.InfJump = Value end })
 
 MainTab:CreateToggle({
    Name = "Noclip",
@@ -2162,7 +2162,7 @@ ServerTab:CreateButton({
 
 -- Info Tab
 InfoTab:CreateSection("Creator Profile")
-InfoTab:CreateButton({ Name = "Display Name: C1rest", Callback = function() end })
+InfoTab:CreateButton({ Name = "Roblox Account: C1rest", Callback = function() end })
 InfoTab:CreateButton({ Name = "TikTok: @nguynkhanq", Callback = function() end })
 InfoTab:CreateButton({
     Name = "Discord: https://discord.gg/gfkNH3dxE (Click to copy)",
@@ -2215,7 +2215,7 @@ end)
 
 task.spawn(function()
     while true do
-        task.wait(0.02)
+        task.wait(0.01)
         pcall(function()
             if State.TeleportAll then
                 pcall(function()
@@ -2228,7 +2228,7 @@ task.spawn(function()
                                 local targetHum = p.Character:FindFirstChildOfClass("Humanoid")
                                 if targetHrp and targetHum and targetHum.Health > 0 then
                                     hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 3, 0)
-                                    task.wait(0.02)
+                                    task.wait(0.01)
                                 end
                             end
                             if not State.TeleportAll then break end
