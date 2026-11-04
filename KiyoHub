@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized + Ultra Instinct Physics Walk Dodge Fixed)
+-- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -286,7 +286,6 @@ local State = {
     FixLag = false,
     SpectateActive = false,
     TargetFling = false,
-    UltraInstinct = false,
     WalkSpeed = 16,
     JumpPower = 50,
     Gravity = 196.2,
@@ -1787,7 +1786,6 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({ Name = "Aimbot", CurrentValue = false, Callback = function(Value) State.Aimbot = Value end })
-MainTab:CreateToggle({ Name = "Ultra Instinct", CurrentValue = false, Callback = function(Value) State.UltraInstinct = Value end })
 MainTab:CreateToggle({ Name = "Inf Jump", CurrentValue = false, Callback = function(Value) State.InfJump = Value end })
 
 MainTab:CreateToggle({
@@ -2309,7 +2307,6 @@ local hue = 0
 local loopTimer = 0
 local espUpdateTimer = 0
 local antiTouchTimer = 0
-local ultraInstinctCooldown = 0
 
 local function getClosestPlayerToHead()
     local closestPlayer = nil
@@ -2374,69 +2371,6 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                 if target and target.Character then
                     local head = target.Character:FindFirstChild("Head")
                     if head and Camera then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, head.Position), 0.9) end
-                end
-            end)
-        end
-
-        -- ==================== ULTRA INSTINCT (DÙNG MOVETO CHỐNG XUYÊN TƯỜNG & CHỐNG RƠI HỐ) ====================
-        if State.UltraInstinct then
-            pcall(function()
-                local char = LocalPlayer.Character
-                if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
-                    local myHrp = char.HumanoidRootPart
-                    local myHum = char:FindFirstChildOfClass("Humanoid")
-                    local currentTime = tick()
-                    
-                    if currentTime - ultraInstinctCooldown >= 0.3 then
-                        for _, p in pairs(Players:GetPlayers()) do
-                            if p ~= LocalPlayer and p.Character then
-                                local targetHrp = p.Character:FindFirstChild("HumanoidRootPart")
-                                local targetHum = p.Character:FindFirstChildOfClass("Humanoid")
-                                if targetHrp and targetHum and targetHum.Health > 0 then
-                                    local distance = (myHrp.Position - targetHrp.Position).Magnitude
-                                    if distance < 16 then
-                                        local safePos = nil
-                                        
-                                        for i = 1, 8 do
-                                            local randomAngle = math.rad(math.random(0, 360))
-                                            local randomDist = math.random(10, 16)
-                                            local offset = Vector3.new(math.cos(randomAngle) * randomDist, 0, math.sin(randomAngle) * randomDist)
-                                            local testPos = myHrp.Position + offset
-                                            
-                                            -- 1. Kiểm tra sàn bên dưới (Chống rơi hố/vực)
-                                            local groundParams = RaycastParams.new()
-                                            groundParams.FilterType = Enum.RaycastFilterType.Exclude
-                                            groundParams.FilterDescendantsInstances = {char, p.Character}
-                                            groundParams.IgnoreWater = true
-                                            
-                                            local groundRay = workspace:Raycast(testPos + Vector3.new(0, 5, 0), Vector3.new(0, -15, 0), groundParams)
-                                            
-                                            if groundRay then
-                                                -- 2. Kiểm tra tường chắn (Chống xuyên tường)
-                                                local wallParams = RaycastParams.new()
-                                                wallParams.FilterType = Enum.RaycastFilterType.Exclude
-                                                wallParams.FilterDescendantsInstances = {char}
-                                                wallParams.IgnoreWater = true
-                                                
-                                                local wallRay = workspace:Raycast(myHrp.Position, (groundRay.Position - myHrp.Position), wallParams)
-                                                
-                                                if not wallRay then
-                                                    safePos = groundRay.Position + Vector3.new(0, 2, 0)
-                                                    break
-                                                end
-                                            end
-                                        end
-                                        
-                                        if safePos then
-                                            myHum:MoveTo(safePos)
-                                            ultraInstinctCooldown = currentTime
-                                            break
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
                 end
             end)
         end
