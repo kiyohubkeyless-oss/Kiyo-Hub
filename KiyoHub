@@ -2308,6 +2308,32 @@ local loopTimer = 0
 local espUpdateTimer = 0
 local antiTouchTimer = 0
 
+local function isPlayerHostile(p)
+    local isHostile = false
+    pcall(function()
+        -- Kiểm tra nếu người chơi đang cầm vũ khí/công cụ gây hại (Dao, súng, gậy...)
+        if p.Character then
+            local tool = p.Character:FindFirstChildOfClass("Tool")
+            if tool then
+                isHostile = true
+            end
+            
+            -- Trạng thái phạm tội/đánh người (Hỗ trợ cấu trúc Prison Life Criming state)
+            if p.Character:FindFirstChild("Criminal") or p.Character:FindFirstChild("Hostile") then
+                isHostile = true
+            end
+        end
+        
+        -- Nếu là tù nhân (Inmates) nhưng thuộc team xám (Criming/Hostile) hoặc có giá trị criming
+        if p.Team and p.Team.Name == "Inmates" then
+            if p:FindFirstChild("status") and p.status.Value == "Criminal" then
+                isHostile = true
+            end
+        end
+    end)
+    return isHostile
+end
+
 local function getClosestPlayerToHead()
     local closestPlayer = nil
     local shortestDistance = math.huge
@@ -2318,22 +2344,31 @@ local function getClosestPlayerToHead()
 
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
-                -- 1. Team Check: Bỏ qua nếu cùng Team
-                if p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team then
+                -- 1. Force Shield Check: Bỏ qua nếu đối phương đang có ForceField (bất tử tạm thời khi mới spawn)
+                if p.Character:FindFirstChildOfClass("ForceField") then
                     continue
                 end
 
-                -- 2. Force Shield Check: Bỏ qua nếu có ForceField trong nhân vật
-                if p.Character:FindFirstChildOfClass("ForceField") then
+                -- 2. Team & Hostile Check:
+                -- Nếu cùng Team thì bỏ qua.
+                -- Nếu khác Team, nhưng người đó là Inmate (Tù nhân): Chỉ nhắm NẾU người đó đang tấn công/có dấu hiệu Hostile.
+                local sameTeam = (p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team)
+                if sameTeam then
                     continue
+                end
+
+                if p.Team and p.Team.Name == "Inmates" then
+                    -- Nếu là Tù nhân lành tính (chưa tấn công/chưa cầm vũ khí), bỏ qua để không bị phạt.
+                    if not isPlayerHostile(p) then
+                        continue
+                    end
                 end
 
                 local hum = p.Character:FindFirstChildOfClass("Humanoid")
                 local head = p.Character:FindFirstChild("Head")
                 
-                -- 3. Attackability Check (Kiểm tra xem có tấn công được không): Sống, không bị PlatformStand (đang ngã/vô hiệu), và có thể nhận sát thương
+                -- 3. Attackability Check: Còn sống, không bị văng/platform stand ngã ngửa
                 if hum and hum.Health > 0 and not hum.PlatformStand then
-                    -- Kiểm tra thêm nếu nhân vật có các state đặc biệt như Dead hoặc Incapacitated
                     local state = hum:GetState()
                     if state ~= Enum.HumanoidStateType.Dead and state ~= Enum.HumanoidStateType.Physics then
                         if head then
@@ -2346,7 +2381,7 @@ local function getClosestPlayerToHead()
                             local direction = head.Position - origin
                             local rayResult = workspace:Raycast(origin, direction, rayParams)
                             
-                            -- 4. Wall Check: Chỉ nhắm nếu không bị vật cản che khuất
+                            -- 4. Wall Check: Không nhắm xuyên tường
                             if not rayResult then
                                 local dist = (head.Position - myHrp.Position).Magnitude
                                 if dist < shortestDistance then 
