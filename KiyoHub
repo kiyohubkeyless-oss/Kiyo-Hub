@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized)
+-- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized + Ultra Instinct Smooth Dodge)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -286,6 +286,7 @@ local State = {
     FixLag = false,
     SpectateActive = false,
     TargetFling = false,
+    UltraInstinct = false,
     WalkSpeed = 16,
     JumpPower = 50,
     Gravity = 196.2,
@@ -1786,6 +1787,7 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({ Name = "Aimbot", CurrentValue = false, Callback = function(Value) State.Aimbot = Value end })
+MainTab:CreateToggle({ Name = "Ultra Instinct", CurrentValue = false, Callback = function(Value) State.UltraInstinct = Value end })
 MainTab:CreateToggle({ Name = "Inf Jump", CurrentValue = false, Callback = function(Value) State.InfJump = Value end })
 
 MainTab:CreateToggle({
@@ -2307,6 +2309,7 @@ local hue = 0
 local loopTimer = 0
 local espUpdateTimer = 0
 local antiTouchTimer = 0
+local ultraInstinctCooldown = 0
 
 local function getClosestPlayerToHead()
     local closestPlayer = nil
@@ -2371,6 +2374,45 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                 if target and target.Character then
                     local head = target.Character:FindFirstChild("Head")
                     if head and Camera then Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, head.Position), 0.9) end
+                end
+            end)
+        end
+
+        -- ==================== ULTRA INSTINCT (LƯỚT NÉ MƯỢT KHÔNG GIẬT MÀN HÌNH) ====================
+        if State.UltraInstinct then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    local myHrp = char.HumanoidRootPart
+                    local currentTime = tick()
+                    
+                    if currentTime - ultraInstinctCooldown >= 0.25 then
+                        for _, p in pairs(Players:GetPlayers()) do
+                            if p ~= LocalPlayer and p.Character then
+                                local targetHrp = p.Character:FindFirstChild("HumanoidRootPart")
+                                local targetHum = p.Character:FindFirstChildOfClass("Humanoid")
+                                if targetHrp and targetHum and targetHum.Health > 0 then
+                                    local distance = (myHrp.Position - targetHrp.Position).Magnitude
+                                    if distance < 11 then
+                                        local randomAngle = math.rad(math.random(0, 360))
+                                        local randomDist = math.random(7, 11)
+                                        local dodgeOffset = Vector3.new(math.cos(randomAngle) * randomDist, 0, math.sin(randomAngle) * randomDist)
+                                        
+                                        -- Giữ nguyên góc xoay CFrame cũ để không bị giật camera góc nhìn
+                                        local targetCFrame = CFrame.new(myHrp.Position + dodgeOffset, myHrp.Position + dodgeOffset + myHrp.CFrame.LookVector)
+                                        
+                                        -- Tween lướt né siêu tốc (0.08s) mượt mà
+                                        TweenService:Create(myHrp, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                                            CFrame = targetCFrame
+                                        }):Play()
+                                        
+                                        ultraInstinctCooldown = currentTime
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
                 end
             end)
         end
