@@ -2318,30 +2318,42 @@ local function getClosestPlayerToHead()
 
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
-                -- Team Check (Bỏ qua đồng đội nếu cùng Team)
+                -- 1. Team Check: Bỏ qua nếu cùng Team
                 if p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team then
+                    continue
+                end
+
+                -- 2. Force Shield Check: Bỏ qua nếu có ForceField trong nhân vật
+                if p.Character:FindFirstChildOfClass("ForceField") then
                     continue
                 end
 
                 local hum = p.Character:FindFirstChildOfClass("Humanoid")
                 local head = p.Character:FindFirstChild("Head")
                 
-                if hum and hum.Health > 0 and head then
-                    local rayParams = RaycastParams.new()
-                    rayParams.FilterType = Enum.RaycastFilterType.Exclude
-                    rayParams.FilterDescendantsInstances = {myChar, p.Character}
-                    rayParams.IgnoreWater = true
-                    
-                    local origin = Camera.CFrame.Position
-                    local direction = head.Position - origin
-                    local rayResult = workspace:Raycast(origin, direction, rayParams)
-                    
-                    -- Wall Check (Chỉ nhắm nếu không bị vật cản che khuất)
-                    if not rayResult then
-                        local dist = (head.Position - myHrp.Position).Magnitude
-                        if dist < shortestDistance then 
-                            shortestDistance = dist 
-                            closestPlayer = p 
+                -- 3. Attackability Check (Kiểm tra xem có tấn công được không): Sống, không bị PlatformStand (đang ngã/vô hiệu), và có thể nhận sát thương
+                if hum and hum.Health > 0 and not hum.PlatformStand then
+                    -- Kiểm tra thêm nếu nhân vật có các state đặc biệt như Dead hoặc Incapacitated
+                    local state = hum:GetState()
+                    if state ~= Enum.HumanoidStateType.Dead and state ~= Enum.HumanoidStateType.Physics then
+                        if head then
+                            local rayParams = RaycastParams.new()
+                            rayParams.FilterType = Enum.RaycastFilterType.Exclude
+                            rayParams.FilterDescendantsInstances = {myChar, p.Character}
+                            rayParams.IgnoreWater = true
+                            
+                            local origin = Camera.CFrame.Position
+                            local direction = head.Position - origin
+                            local rayResult = workspace:Raycast(origin, direction, rayParams)
+                            
+                            -- 4. Wall Check: Chỉ nhắm nếu không bị vật cản che khuất
+                            if not rayResult then
+                                local dist = (head.Position - myHrp.Position).Magnitude
+                                if dist < shortestDistance then 
+                                    shortestDistance = dist 
+                                    closestPlayer = p 
+                                end
+                            end
                         end
                     end
                 end
