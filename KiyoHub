@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized + Ultra Instinct Smooth Dodge)
+-- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized + Ultra Instinct Safe Dodge)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -2378,7 +2378,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
             end)
         end
 
-        -- ==================== ULTRA INSTINCT (LƯỚT NÉ MƯỢT KHÔNG GIẬT MÀN HÌNH) ====================
+        -- ==================== ULTRA INSTINCT (CHỐNG XUYÊN TƯỜNG & CHỐNG RƠI HỐ BẰNG RAYCAST) ====================
         if State.UltraInstinct then
             pcall(function()
                 local char = LocalPlayer.Character
@@ -2393,21 +2393,50 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                                 local targetHum = p.Character:FindFirstChildOfClass("Humanoid")
                                 if targetHrp and targetHum and targetHum.Health > 0 then
                                     local distance = (myHrp.Position - targetHrp.Position).Magnitude
-                                    if distance < 11 then
-                                        local randomAngle = math.rad(math.random(0, 360))
-                                        local randomDist = math.random(7, 11)
-                                        local dodgeOffset = Vector3.new(math.cos(randomAngle) * randomDist, 0, math.sin(randomAngle) * randomDist)
+                                    if distance < 16 then
+                                        local validCFrame = nil
                                         
-                                        -- Giữ nguyên góc xoay CFrame cũ để không bị giật camera góc nhìn
-                                        local targetCFrame = CFrame.new(myHrp.Position + dodgeOffset, myHrp.Position + dodgeOffset + myHrp.CFrame.LookVector)
+                                        -- Thử tối đa 6 góc ngẫu nhiên để tìm điểm né an toàn (không tường, không hố)
+                                        for i = 1, 6 do
+                                            local randomAngle = math.rad(math.random(0, 360))
+                                            local randomDist = math.random(10, 16)
+                                            local dodgeOffset = Vector3.new(math.cos(randomAngle) * randomDist, 0, math.sin(randomAngle) * randomDist)
+                                            local rawPos = myHrp.Position + dodgeOffset
+                                            
+                                            -- 1. Kiểm tra hố/vực bằng cách bắn raycast từ trên xuống tìm sàn
+                                            local groundRayParams = RaycastParams.new()
+                                            groundRayParams.FilterType = Enum.RaycastFilterType.Exclude
+                                            groundRayParams.FilterDescendantsInstances = {char, p.Character}
+                                            groundRayParams.IgnoreWater = true
+                                            
+                                            local rayOrigin = rawPos + Vector3.new(0, 5, 0)
+                                            local rayDirection = Vector3.new(0, -15, 0)
+                                            local groundResult = workspace:Raycast(rayOrigin, rayDirection, groundRayParams)
+                                            
+                                            if groundResult then
+                                                -- 2. Kiểm tra tường chắn giữa người và điểm né
+                                                local wallRayParams = RaycastParams.new()
+                                                wallRayParams.FilterType = Enum.RaycastFilterType.Exclude
+                                                wallRayParams.FilterDescendantsInstances = {char}
+                                                wallRayParams.IgnoreWater = true
+                                                
+                                                local wallResult = workspace:Raycast(myHrp.Position, (groundResult.Position - myHrp.Position), wallRayParams)
+                                                
+                                                if not wallResult or (wallResult.Position - myHrp.Position).Magnitude >= (groundResult.Position - myHrp.Position).Magnitude - 1 then
+                                                    validCFrame = CFrame.new(groundResult.Position + Vector3.new(0, 3, 0), groundResult.Position + Vector3.new(0, 3, 0) + myHrp.CFrame.LookVector)
+                                                    break
+                                                end
+                                            end
+                                        end
                                         
-                                        -- Tween lướt né siêu tốc (0.08s) mượt mà
-                                        TweenService:Create(myHrp, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                                            CFrame = targetCFrame
-                                        }):Play()
-                                        
-                                        ultraInstinctCooldown = currentTime
-                                        break
+                                        if validCFrame then
+                                            TweenService:Create(myHrp, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                                                CFrame = validCFrame
+                                            }):Play()
+                                            
+                                            ultraInstinctCooldown = currentTime
+                                            break
+                                        end
                                     end
                                 end
                             end
