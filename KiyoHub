@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized + Ultra Instinct Safe Dodge)
+-- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized + Ultra Instinct Safe Dodge Fixed)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -2378,7 +2378,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
             end)
         end
 
-        -- ==================== ULTRA INSTINCT (CHỐNG XUYÊN TƯỜNG & CHỐNG RƠI HỐ BẰNG RAYCAST) ====================
+        -- ==================== ULTRA INSTINCT (CHỐNG RƠI HỐ & CHỐNG XUYÊN TƯỜNG TUYỆT ĐỐI) ====================
         if State.UltraInstinct then
             pcall(function()
                 local char = LocalPlayer.Character
@@ -2394,44 +2394,41 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                                 if targetHrp and targetHum and targetHum.Health > 0 then
                                     local distance = (myHrp.Position - targetHrp.Position).Magnitude
                                     if distance < 16 then
-                                        local validCFrame = nil
+                                        local safeCFrame = nil
                                         
-                                        -- Thử tối đa 6 góc ngẫu nhiên để tìm điểm né an toàn (không tường, không hố)
-                                        for i = 1, 6 do
+                                        for i = 1, 8 do
                                             local randomAngle = math.rad(math.random(0, 360))
                                             local randomDist = math.random(10, 16)
-                                            local dodgeOffset = Vector3.new(math.cos(randomAngle) * randomDist, 0, math.sin(randomAngle) * randomDist)
-                                            local rawPos = myHrp.Position + dodgeOffset
+                                            local offset = Vector3.new(math.cos(randomAngle) * randomDist, 0, math.sin(randomAngle) * randomDist)
+                                            local targetPos = myHrp.Position + offset
                                             
-                                            -- 1. Kiểm tra hố/vực bằng cách bắn raycast từ trên xuống tìm sàn
-                                            local groundRayParams = RaycastParams.new()
-                                            groundRayParams.FilterType = Enum.RaycastFilterType.Exclude
-                                            groundRayParams.FilterDescendantsInstances = {char, p.Character}
-                                            groundRayParams.IgnoreWater = true
+                                            -- Kiểm tra sàn phía dưới (Chống rơi hố)
+                                            local groundParams = RaycastParams.new()
+                                            groundParams.FilterType = Enum.RaycastFilterType.Exclude
+                                            groundParams.FilterDescendantsInstances = {char, p.Character}
+                                            groundParams.IgnoreWater = true
                                             
-                                            local rayOrigin = rawPos + Vector3.new(0, 5, 0)
-                                            local rayDirection = Vector3.new(0, -15, 0)
-                                            local groundResult = workspace:Raycast(rayOrigin, rayDirection, groundRayParams)
+                                            local groundRay = workspace:Raycast(targetPos + Vector3.new(0, 10, 0), Vector3.new(0, -30, 0), groundParams)
                                             
-                                            if groundResult then
-                                                -- 2. Kiểm tra tường chắn giữa người và điểm né
-                                                local wallRayParams = RaycastParams.new()
-                                                wallRayParams.FilterType = Enum.RaycastFilterType.Exclude
-                                                wallRayParams.FilterDescendantsInstances = {char}
-                                                wallRayParams.IgnoreWater = true
+                                            if groundRay then
+                                                -- Kiểm tra tường chắn giữa chỗ đứng hiện tại và chỗ né (Chống xuyên tường)
+                                                local wallParams = RaycastParams.new()
+                                                wallParams.FilterType = Enum.RaycastFilterType.Exclude
+                                                wallParams.FilterDescendantsInstances = {char}
+                                                wallParams.IgnoreWater = true
                                                 
-                                                local wallResult = workspace:Raycast(myHrp.Position, (groundResult.Position - myHrp.Position), wallRayParams)
+                                                local wallRay = workspace:Raycast(myHrp.Position, (groundRay.Position + Vector3.new(0, 3, 0) - myHrp.Position), wallParams)
                                                 
-                                                if not wallResult or (wallResult.Position - myHrp.Position).Magnitude >= (groundResult.Position - myHrp.Position).Magnitude - 1 then
-                                                    validCFrame = CFrame.new(groundResult.Position + Vector3.new(0, 3, 0), groundResult.Position + Vector3.new(0, 3, 0) + myHrp.CFrame.LookVector)
+                                                if not wallRay then
+                                                    safeCFrame = CFrame.new(groundRay.Position + Vector3.new(0, 3, 0), groundRay.Position + Vector3.new(0, 3, 0) + myHrp.CFrame.LookVector)
                                                     break
                                                 end
                                             end
                                         end
                                         
-                                        if validCFrame then
+                                        if safeCFrame then
                                             TweenService:Create(myHrp, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                                                CFrame = validCFrame
+                                                CFrame = safeCFrame
                                             }):Play()
                                             
                                             ultraInstinctCooldown = currentTime
