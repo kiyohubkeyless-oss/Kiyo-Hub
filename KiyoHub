@@ -2318,6 +2318,11 @@ local function getClosestPlayerToHead()
 
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
+                -- Team Check (Bỏ qua đồng đội nếu cùng Team)
+                if p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team then
+                    continue
+                end
+
                 local hum = p.Character:FindFirstChildOfClass("Humanoid")
                 local head = p.Character:FindFirstChild("Head")
                 
@@ -2331,9 +2336,13 @@ local function getClosestPlayerToHead()
                     local direction = head.Position - origin
                     local rayResult = workspace:Raycast(origin, direction, rayParams)
                     
+                    -- Wall Check (Chỉ nhắm nếu không bị vật cản che khuất)
                     if not rayResult then
                         local dist = (head.Position - myHrp.Position).Magnitude
-                        if dist < shortestDistance then shortestDistance = dist closestPlayer = p end
+                        if dist < shortestDistance then 
+                            shortestDistance = dist 
+                            closestPlayer = p 
+                        end
                     end
                 end
             end
