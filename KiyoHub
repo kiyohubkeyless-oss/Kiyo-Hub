@@ -911,6 +911,34 @@ TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 13
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+-- ==================== FPS COUNTER (BÊN CẠNH CHỮ KIYOHUB) ====================
+local FpsLabel = Instance.new("TextLabel", TopBar)
+FpsLabel.Size = UDim2.new(0, 120, 1, 0)
+FpsLabel.Position = UDim2.new(0, 115, 0, 0)
+FpsLabel.BackgroundTransparency = 1
+FpsLabel.Text = "FPS: --"
+FpsLabel.TextColor3 = Color3.fromRGB(60, 255, 100)
+FpsLabel.Font = Enum.Font.GothamBold
+FpsLabel.TextSize = 11
+FpsLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+task.spawn(function()
+    while true do
+        pcall(function()
+            local dt = task.wait(0.5)
+            if dt > 0 then
+                local fps = math.floor(1 / dt + 0.5)
+                FpsLabel.Text = "FPS: " .. fps
+                if fps < 40 then
+                    FpsLabel.TextColor3 = Color3.fromRGB(255, 60, 60) -- Màu đỏ khi dưới 40 FPS
+                else
+                    FpsLabel.TextColor3 = Color3.fromRGB(60, 255, 100) -- Màu xanh lá khi trên 40 FPS
+                end
+            end
+        end)
+    end
+end)
+
 local UnloadGui = Instance.new("ScreenGui", ParentGui)
 UnloadGui.Name = "KiyoHubUnloadGui"
 UnloadGui.ResetOnSpawn = false
@@ -2311,20 +2339,17 @@ local antiTouchTimer = 0
 local function isPlayerHostile(p)
     local isHostile = false
     pcall(function()
-        -- Kiểm tra nếu người chơi đang cầm vũ khí/công cụ gây hại (Dao, súng, gậy...)
         if p.Character then
             local tool = p.Character:FindFirstChildOfClass("Tool")
             if tool then
                 isHostile = true
             end
             
-            -- Trạng thái phạm tội/đánh người (Hỗ trợ cấu trúc Prison Life Criming state)
             if p.Character:FindFirstChild("Criminal") or p.Character:FindFirstChild("Hostile") then
                 isHostile = true
             end
         end
         
-        -- Nếu là tù nhân (Inmates) nhưng thuộc team xám (Criming/Hostile) hoặc có giá trị criming
         if p.Team and p.Team.Name == "Inmates" then
             if p:FindFirstChild("status") and p.status.Value == "Criminal" then
                 isHostile = true
@@ -2344,21 +2369,16 @@ local function getClosestPlayerToHead()
 
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
-                -- 1. Force Shield Check: Bỏ qua nếu đối phương đang có ForceField (bất tử tạm thời khi mới spawn)
                 if p.Character:FindFirstChildOfClass("ForceField") then
                     continue
                 end
 
-                -- 2. Team & Hostile Check:
-                -- Nếu cùng Team thì bỏ qua.
-                -- Nếu khác Team, nhưng người đó là Inmate (Tù nhân): Chỉ nhắm NẾU người đó đang tấn công/có dấu hiệu Hostile.
                 local sameTeam = (p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team)
                 if sameTeam then
                     continue
                 end
 
                 if p.Team and p.Team.Name == "Inmates" then
-                    -- Nếu là Tù nhân lành tính (chưa tấn công/chưa cầm vũ khí), bỏ qua để không bị phạt.
                     if not isPlayerHostile(p) then
                         continue
                     end
@@ -2367,7 +2387,6 @@ local function getClosestPlayerToHead()
                 local hum = p.Character:FindFirstChildOfClass("Humanoid")
                 local head = p.Character:FindFirstChild("Head")
                 
-                -- 3. Attackability Check: Còn sống, không bị văng/platform stand ngã ngửa
                 if hum and hum.Health > 0 and not hum.PlatformStand then
                     local state = hum:GetState()
                     if state ~= Enum.HumanoidStateType.Dead and state ~= Enum.HumanoidStateType.Physics then
@@ -2381,7 +2400,6 @@ local function getClosestPlayerToHead()
                             local direction = head.Position - origin
                             local rayResult = workspace:Raycast(origin, direction, rayParams)
                             
-                            -- 4. Wall Check: Không nhắm xuyên tường
                             if not rayResult then
                                 local dist = (head.Position - myHrp.Position).Magnitude
                                 if dist < shortestDistance then 
