@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized + Ultra Instinct Safe Dodge Fixed)
+-- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized + Ultra Instinct Physics Walk Dodge Fixed)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -2378,15 +2378,16 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
             end)
         end
 
-        -- ==================== ULTRA INSTINCT (CHỐNG RƠI HỐ & CHỐNG XUYÊN TƯỜNG TUYỆT ĐỐI) ====================
+        -- ==================== ULTRA INSTINCT (DÙNG MOVETO CHỐNG XUYÊN TƯỜNG & CHỐNG RƠI HỐ) ====================
         if State.UltraInstinct then
             pcall(function()
                 local char = LocalPlayer.Character
-                if char and char:FindFirstChild("HumanoidRootPart") then
+                if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
                     local myHrp = char.HumanoidRootPart
+                    local myHum = char:FindFirstChildOfClass("Humanoid")
                     local currentTime = tick()
                     
-                    if currentTime - ultraInstinctCooldown >= 0.25 then
+                    if currentTime - ultraInstinctCooldown >= 0.3 then
                         for _, p in pairs(Players:GetPlayers()) do
                             if p ~= LocalPlayer and p.Character then
                                 local targetHrp = p.Character:FindFirstChild("HumanoidRootPart")
@@ -2394,43 +2395,40 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                                 if targetHrp and targetHum and targetHum.Health > 0 then
                                     local distance = (myHrp.Position - targetHrp.Position).Magnitude
                                     if distance < 16 then
-                                        local safeCFrame = nil
+                                        local safePos = nil
                                         
                                         for i = 1, 8 do
                                             local randomAngle = math.rad(math.random(0, 360))
                                             local randomDist = math.random(10, 16)
                                             local offset = Vector3.new(math.cos(randomAngle) * randomDist, 0, math.sin(randomAngle) * randomDist)
-                                            local targetPos = myHrp.Position + offset
+                                            local testPos = myHrp.Position + offset
                                             
-                                            -- Kiểm tra sàn phía dưới (Chống rơi hố)
+                                            -- 1. Kiểm tra sàn bên dưới (Chống rơi hố/vực)
                                             local groundParams = RaycastParams.new()
                                             groundParams.FilterType = Enum.RaycastFilterType.Exclude
                                             groundParams.FilterDescendantsInstances = {char, p.Character}
                                             groundParams.IgnoreWater = true
                                             
-                                            local groundRay = workspace:Raycast(targetPos + Vector3.new(0, 10, 0), Vector3.new(0, -30, 0), groundParams)
+                                            local groundRay = workspace:Raycast(testPos + Vector3.new(0, 5, 0), Vector3.new(0, -15, 0), groundParams)
                                             
                                             if groundRay then
-                                                -- Kiểm tra tường chắn giữa chỗ đứng hiện tại và chỗ né (Chống xuyên tường)
+                                                -- 2. Kiểm tra tường chắn (Chống xuyên tường)
                                                 local wallParams = RaycastParams.new()
                                                 wallParams.FilterType = Enum.RaycastFilterType.Exclude
                                                 wallParams.FilterDescendantsInstances = {char}
                                                 wallParams.IgnoreWater = true
                                                 
-                                                local wallRay = workspace:Raycast(myHrp.Position, (groundRay.Position + Vector3.new(0, 3, 0) - myHrp.Position), wallParams)
+                                                local wallRay = workspace:Raycast(myHrp.Position, (groundRay.Position - myHrp.Position), wallParams)
                                                 
                                                 if not wallRay then
-                                                    safeCFrame = CFrame.new(groundRay.Position + Vector3.new(0, 3, 0), groundRay.Position + Vector3.new(0, 3, 0) + myHrp.CFrame.LookVector)
+                                                    safePos = groundRay.Position + Vector3.new(0, 2, 0)
                                                     break
                                                 end
                                             end
                                         end
                                         
-                                        if safeCFrame then
-                                            TweenService:Create(myHrp, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                                                CFrame = safeCFrame
-                                            }):Play()
-                                            
+                                        if safePos then
+                                            myHum:MoveTo(safePos)
                                             ultraInstinctCooldown = currentTime
                                             break
                                         end
