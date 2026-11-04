@@ -1041,6 +1041,7 @@ FloatButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Căn chỉnh lại vị trí menu danh sách tab (thụt lề sang phải, tránh tràn viền)
 local TabListFrame = Instance.new("ScrollingFrame", MainFrame)
 TabListFrame.Size = UDim2.new(0, 102, 1, -44)
 TabListFrame.Position = UDim2.new(0, 6, 0, 42)
@@ -1052,6 +1053,7 @@ local UIListLayoutTabs = Instance.new("UIListLayout", TabListFrame)
 UIListLayoutTabs.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayoutTabs.Padding = UDim.new(0, 4)
 
+-- Căn chỉnh lại khung chứa nội dung bên phải cho gọn gàng
 local ContainerHolder = Instance.new("Frame", MainFrame)
 ContainerHolder.Size = UDim2.new(1, -118, 1, -44)
 ContainerHolder.Position = UDim2.new(0, 114, 0, 42)
@@ -2339,72 +2341,23 @@ local loopTimer = 0
 local espUpdateTimer = 0
 local antiTouchTimer = 0
 
--- ==================== HÀM KIỂM TRA TEAM & HOSTILE ĐẢM BẢO KHÔNG BAO GIỜ AIM NHẦM ĐỒNG ĐỘI ====================
-local function isSameTeam(p)
-    if not p.Team or not LocalPlayer.Team then return false end
-    if p.Team == LocalPlayer.Team then return true end
-    
-    -- Kiểm tra tên team đặc thù trong Prison Life
-    local myTeamName = LocalPlayer.Team.Name
-    local pTeamName = p.Team.Name
-    
-    if myTeamName == pTeamName then return true end
-    
-    -- Nếu bạn là Guard (Cảnh sát) thì tất cả Guard khác là đồng đội tuyệt đối
-    if myTeamName == "Guards" and pTeamName == "Guards" then return true end
-    
-    -- Nếu bạn là Inmate (Tù nhân) chưa thành Criminal thì các Inmate bình thường khác là đồng đội
-    if myTeamName == "Inmates" and pTeamName == "Inmates" then
-        -- Trừ phi inmate đó đang có status Criminal hoặc đang cầm súng tấn công bạn thì mới tính là kẻ địch
-        return false
-    end
-    
-    return false
-end
-
 local function isPlayerHostile(p)
     local isHostile = false
     pcall(function()
-        if not p.Character then return end
-        
-        -- Nếu là Guard đang làm nhiệm vụ mà không phải kẻ địch thì bỏ qua
-        if p.Team and p.Team.Name == "Guards" then
-            isHostile = false
-            return
-        end
-        
-        -- 1. Kiểm tra xem có đang cầm súng hoặc vũ khí sát thương không
-        local tool = p.Character:FindFirstChildOfClass("Tool")
-        if tool then
-            local toolName = string.lower(tool.Name)
-            if string.find(toolName, "gun") or string.find(toolName, "pistol") or string.find(toolName, "shotgun") or string.find(toolName, "rifle") or string.find(toolName, "remington") or string.find(toolName, "ak") or string.find(toolName, "m9") or string.find(toolName, "knife") or string.find(toolName, "hammer") or string.find(toolName, "shank") or string.find(toolName, "sword") then
+        if p.Character then
+            local tool = p.Character:FindFirstChildOfClass("Tool")
+            if tool then
+                isHostile = true
+            end
+            
+            if p.Character:FindFirstChild("Criminal") or p.Character:FindFirstChild("Hostile") then
                 isHostile = true
             end
         end
         
-        -- 2. Nếu đã có trạng thái Criminal hoặc Hostile rõ ràng
-        if p.Character:FindFirstChild("Criminal") or p.Character:FindFirstChild("Hostile") then
-            isHostile = true
-        end
-        
-        if p:FindFirstChild("status") and p.status.Value == "Criminal" then
-            isHostile = true
-        end
-        
-        -- 3. Kiểm tra hành vi đang tấn công ở cự ly gần và có hướng nhìn thẳng vào bạn
-        local myChar = LocalPlayer.Character
-        if myChar and myChar:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("HumanoidRootPart") then
-            local pRoot = p.Character.HumanoidRootPart
-            local myRoot = myChar.HumanoidRootPart
-            local dist = (pRoot.Position - myRoot.Position).Magnitude
-            
-            if dist < 25 then
-                local lookVector = pRoot.CFrame.LookVector
-                local toMe = (myRoot.Position - pRoot.Position).Unit
-                local dot = lookVector:Dot(toMe)
-                if dot > 0.5 then
-                    isHostile = true
-                end
+        if p.Team and p.Team.Name == "Inmates" then
+            if p:FindFirstChild("status") and p.status.Value == "Criminal" then
+                isHostile = true
             end
         end
     end)
@@ -2421,17 +2374,15 @@ local function getClosestPlayerToHead()
 
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
-                -- Bỏ qua nếu có ForceField (bất tử)
                 if p.Character:FindFirstChildOfClass("ForceField") then
                     continue
                 end
 
-                -- KIỂM TRA TEAM TUYỆT ĐỐI: Nếu là đồng đội -> BỎ QUA NGAY LẬP TỨC
-                if isSameTeam(p) then
+                local sameTeam = (p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team)
+                if sameTeam then
                     continue
                 end
 
-                -- Nếu là Inmates, bắt buộc phải check xem có thực sự Hostile (tấn công/cầm súng) hay không
                 if p.Team and p.Team.Name == "Inmates" then
                     if not isPlayerHostile(p) then
                         continue
