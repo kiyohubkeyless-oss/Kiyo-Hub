@@ -2341,41 +2341,43 @@ local loopTimer = 0
 local espUpdateTimer = 0
 local antiTouchTimer = 0
 
--- ==================== HÀM KIỂM TRA INMATES ATTACKING / HOSTILE CỰC KỲ CHÍNH XÁC ====================
+-- ==================== HÀM LỌC TÙ NHÂN HOSTILE CỰC KỲ CHÍNH XÁC (LOẠI BỎ TÙ NHÂN VÔ TỘI) ====================
 local function isPlayerHostile(p)
     local isHostile = false
     pcall(function()
         if not p.Character then return end
         
-        -- 1. Nếu đang cầm súng hoặc vũ khí (Tool) -> Mặc định coi là đang tấn công / nguy hiểm
+        -- Kiểm tra xem có đang cầm súng hoặc vũ khí sát thương không (loại bỏ các tool không phải vũ khí nếu có)
         local tool = p.Character:FindFirstChildOfClass("Tool")
         if tool then
-            isHostile = true
+            local toolName = string.lower(tool.Name)
+            -- Danh sách các vũ khí thường gặp trong Prison Life hoặc Roblox
+            if string.find(toolName, "gun") or string.find(toolName, "pistol") or string.find(toolName, "shotgun") or string.find(toolName, "rifle") or string.find(toolName, "remington") or string.find(toolName, "ak") or string.find(toolName, "m9") or string.find(toolName, "knife") or string.find(toolName, "hammer") or string.find(toolName, "shank") or string.find(toolName, "sword") then
+                isHostile = true
+            end
         end
         
-        -- 2. Kiểm tra các tag trạng thái Criminal hoặc Hostile đặc thù
+        -- Nếu đã có trạng thái Criminal hoặc Hostile rõ ràng
         if p.Character:FindFirstChild("Criminal") or p.Character:FindFirstChild("Hostile") then
             isHostile = true
         end
         
-        -- 3. Kiểm tra status value trong Prison Life
         if p:FindFirstChild("status") and p.status.Value == "Criminal" then
             isHostile = true
         end
         
-        -- 4. Nếu họ đang nhắm bắn hoặc tấn công hướng về phía mình (kiểm tra khoảng cách gần + hướng nhìn)
+        -- Kiểm tra hành vi đang tấn công ở cự ly gần và có hướng nhìn thẳng vào bạn
         local myChar = LocalPlayer.Character
         if myChar and myChar:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("HumanoidRootPart") then
             local pRoot = p.Character.HumanoidRootPart
             local myRoot = myChar.HumanoidRootPart
             local dist = (pRoot.Position - myRoot.Position).Magnitude
             
-            -- Nếu tù nhân ở gần (dưới 35 studs) và đang hướng mặt về phía mình -> Coi như đang đe dọa/tấn công
-            if dist < 35 then
+            if dist < 25 then
                 local lookVector = pRoot.CFrame.LookVector
                 local toMe = (myRoot.Position - pRoot.Position).Unit
                 local dot = lookVector:Dot(toMe)
-                if dot > 0.3 then
+                if dot > 0.5 then
                     isHostile = true
                 end
             end
@@ -2406,7 +2408,7 @@ local function getClosestPlayerToHead()
                     continue
                 end
 
-                -- Xử lý đặc thù cho team Inmates: Chỉ aim khi họ thực sự tấn công (Cầm súng/vũ khí, đang đánh, hoặc đang hướng về mình)
+                -- Xử lý cực kỳ chặt chẽ cho team Inmates: Chỉ aim khi họ thực sự cầm vũ khí / tấn công (Loại bỏ tuyệt đối tù nhân vô tội)
                 if p.Team and p.Team.Name == "Inmates" then
                     if not isPlayerHostile(p) then
                         continue
