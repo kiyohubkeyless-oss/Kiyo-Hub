@@ -902,8 +902,8 @@ LogoImg.BackgroundTransparency = 1
 LogoImg.Image = "rbxassetid://11778372908"
 
 local TitleLabel = Instance.new("TextLabel", TopBar)
-TitleLabel.Size = UDim2.new(0, 250, 1, 0)
-TitleLabel.Position = UDim2.new(0, 40, 0, 0)
+TitleLabel.Size = UDim2.new(0, 85, 1, 0)
+TitleLabel.Position = UDim2.new(0, 38, 0, 0)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "Kiyo Hub"
 TitleLabel.TextColor3 = Color3.fromRGB(230, 235, 245)
@@ -913,8 +913,8 @@ TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- ==================== FPS COUNTER (BÊN CẠNH CHỮ KIYOHUB) ====================
 local FpsLabel = Instance.new("TextLabel", TopBar)
-FpsLabel.Size = UDim2.new(0, 120, 1, 0)
-FpsLabel.Position = UDim2.new(0, 115, 0, 0)
+FpsLabel.Size = UDim2.new(0, 85, 1, 0)
+FpsLabel.Position = UDim2.new(0, 125, 0, 0)
 FpsLabel.BackgroundTransparency = 1
 FpsLabel.Text = "FPS: --"
 FpsLabel.TextColor3 = Color3.fromRGB(60, 255, 100)
@@ -922,22 +922,25 @@ FpsLabel.Font = Enum.Font.GothamBold
 FpsLabel.TextSize = 11
 FpsLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-task.spawn(function()
-    while true do
-        pcall(function()
-            local dt = task.wait(0.5)
-            if dt > 0 then
-                local fps = math.floor(1 / dt + 0.5)
-                FpsLabel.Text = "FPS: " .. fps
-                if fps < 40 then
-                    FpsLabel.TextColor3 = Color3.fromRGB(255, 60, 60) -- Màu đỏ khi dưới 40 FPS
-                else
-                    FpsLabel.TextColor3 = Color3.fromRGB(60, 255, 100) -- Màu xanh lá khi trên 40 FPS
-                end
-            end
-        end)
+local fpsUpdateTimer = 0
+local frameCount = 0
+local currentFps = 60
+
+table.insert(Connections, RunService.RenderStepped:Connect(function(dt)
+    frameCount = frameCount + 1
+    fpsUpdateTimer = fpsUpdateTimer + dt
+    if fpsUpdateTimer >= 0.5 then
+        currentFps = math.floor((frameCount / fpsUpdateTimer) + 0.5)
+        FpsLabel.Text = "FPS: " .. currentFps
+        if currentFps < 40 then
+            FpsLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
+        else
+            FpsLabel.TextColor3 = Color3.fromRGB(60, 255, 100)
+        end
+        frameCount = 0
+        fpsUpdateTimer = 0
     end
-end)
+end))
 
 local UnloadGui = Instance.new("ScreenGui", ParentGui)
 UnloadGui.Name = "KiyoHubUnloadGui"
@@ -1038,9 +1041,10 @@ FloatButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Căn chỉnh lại vị trí menu danh sách tab (thụt lề sang phải, tránh tràn viền)
 local TabListFrame = Instance.new("ScrollingFrame", MainFrame)
-TabListFrame.Size = UDim2.new(0, 110, 1, -40)
-TabListFrame.Position = UDim2.new(0, 0, 0, 40)
+TabListFrame.Size = UDim2.new(0, 102, 1, -44)
+TabListFrame.Position = UDim2.new(0, 6, 0, 42)
 TabListFrame.BackgroundTransparency = 1
 TabListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 TabListFrame.ScrollBarThickness = 2
@@ -1049,9 +1053,10 @@ local UIListLayoutTabs = Instance.new("UIListLayout", TabListFrame)
 UIListLayoutTabs.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayoutTabs.Padding = UDim.new(0, 4)
 
+-- Căn chỉnh lại khung chứa nội dung bên phải cho gọn gàng
 local ContainerHolder = Instance.new("Frame", MainFrame)
-ContainerHolder.Size = UDim2.new(1, -115, 1, -42)
-ContainerHolder.Position = UDim2.new(0, 115, 0, 40)
+ContainerHolder.Size = UDim2.new(1, -118, 1, -44)
+ContainerHolder.Position = UDim2.new(0, 114, 0, 42)
 ContainerHolder.BackgroundTransparency = 1
 
 local Tabs = {}
@@ -1088,15 +1093,15 @@ local function CreateTab(name)
     end)
     
     local tabBtn = Instance.new("TextButton", TabListFrame)
-    tabBtn.Size = UDim2.new(1, -8, 0, 28)
-    tabBtn.Position = UDim2.new(0, 4, 0, 0)
+    tabBtn.Size = UDim2.new(1, -6, 0, 28)
+    tabBtn.Position = UDim2.new(0, 3, 0, 0)
     tabBtn.BackgroundColor3 = Color3.fromRGB(17, 21, 28)
     tabBtn.Text = name
     tabBtn.TextColor3 = Color3.fromRGB(150, 165, 190)
     tabBtn.Font = Enum.Font.GothamMedium
     tabBtn.TextSize = 11
     Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
-    AddBounceEffect(tabBtn, UDim2.new(1, -8, 0, 28))
+    AddBounceEffect(tabBtn, UDim2.new(1, -6, 0, 28))
     
     tabBtn.MouseButton1Click:Connect(function()
         for _, t in pairs(Tabs) do
