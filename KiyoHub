@@ -2341,20 +2341,24 @@ local antiTouchTimer = 0
 
 local isPrisonLife = (game.PlaceId == 155615604 or game.PlaceId == 606849622)
 
--- ==================== CƠ CHẾ AIMBOT CẢI TIẾN PRISON LIFE ====================
+-- ==================== CƠ CHẾ AIMBOT CẢI TIẾN PRISON LIFE (ƯU TIÊN TUYỆT ĐỐI DẤU 💢) ====================
 local function isPlayerHostile(p)
     local isHostile = false
     pcall(function()
         if p.Character then
-            local tool = p.Character:FindFirstChildOfClass("Tool")
-            if tool then
-                local tName = tool.Name:lower()
-                if tName:find("gun") or tName:find("pistol") or tName:find("remington") or tName:find("ak") or tName:find("taser") or tName:find("hammer") or tName:find("knife") then
-                    isHostile = true
+            -- Quét toàn bộ character xem có hiển thị dấu hiệu 💢, text hostile/combat hoặc billboard cảnh báo không
+            for _, desc in pairs(p.Character:GetDescendants()) do
+                if desc:IsA("BillboardGui") or desc:IsA("TextLabel") then
+                    local text = (desc:IsA("TextLabel") and desc.Text or desc.Name):lower()
+                    if text:find("💢") or text:find("hostile") or text:find("combat") then
+                        isHostile = true
+                        break
+                    end
                 end
             end
             
-            if p.Character:FindFirstChild("Criminal") or p.Character:FindFirstChild("Hostile") then
+            -- Kiểm tra thêm các tag trạng thái thù địch sẵn có trong character hoặc player
+            if p.Character:FindFirstChild("Criminal") or p.Character:FindFirstChild("Hostile") or p.Character:FindFirstChild("Combat") then
                 isHostile = true
             end
         end
@@ -2385,23 +2389,22 @@ local function getClosestPlayerToHead()
                 local targetIsHostile = isPlayerHostile(p)
                 local shouldTarget = false
 
-                if isPrisonLife then
-                    if myTeam == "Guards" then
-                        if targetTeam == "Criminals" or (targetTeam == "Inmates" and targetIsHostile) then
-                            shouldTarget = true
-                        end
-                    elseif myTeam == "Criminals" then
-                        if targetTeam == "Guards" or (targetTeam == "Inmates" and targetIsHostile) then
-                            shouldTarget = true
-                        end
-                    elseif myTeam == "Inmates" then
-                        if targetTeam == "Guards" or targetTeam == "Criminals" then
-                            shouldTarget = true
-                        end
-                    end
+                -- LOGIC: Cứ có dấu 💢 hoặc thuộc phe thù địch/Criminal/Guards tùy theo phe của bạn
+                if targetIsHostile then
+                    shouldTarget = true
                 else
-                    if p.Team ~= LocalPlayer.Team then
-                        shouldTarget = true
+                    if isPrisonLife then
+                        if myTeam == "Guards" then
+                            if targetTeam == "Criminals" then shouldTarget = true end
+                        elseif myTeam == "Criminals" then
+                            if targetTeam == "Guards" then shouldTarget = true end
+                        elseif myTeam == "Inmates" then
+                            if targetTeam == "Guards" or targetTeam == "Criminals" then shouldTarget = true end
+                        end
+                    else
+                        if p.Team ~= LocalPlayer.Team then
+                            shouldTarget = true
+                        end
                     end
                 end
 
