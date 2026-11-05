@@ -2586,7 +2586,8 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                                         nameTag = Instance.new("BillboardGui", head)
                                         nameTag.Name, nameTag.Size, nameTag.StudsOffset, nameTag.AlwaysOnTop = "ESPNameTag", UDim2.new(0, 100, 0, 25), Vector3.new(0, 2, 0), true
                                         local textLabel = Instance.new("TextLabel", nameTag)
-                                        textLabel.Name, textLabel.Size, textLabel.BackgroundTransparency, textLabel.Font, textLabel.TextSize, textLabel.TextStrokeTransparency = "Text", UDim2.new(1, 0, 1, 0), 1, Enum.Font.GothamBold, 10, 0.5
+                                        textLabel.Name, textLabel.Size, textLabel.BackgroundTransparency, textLabel.Font, textLabel.TextSize, text
+                                        StrokeTransparency = "Text", UDim2.new(1, 0, 1, 0), 1, Enum.Font.GothamBold, 10, 0.5
                                     end
                                     local tLabel = nameTag:FindFirstChild("Text")
                                     if tLabel then tLabel.Text, tLabel.TextColor3 = p.DisplayName ~= "" and p.DisplayName or p.Name, rainbowColor end
@@ -2599,7 +2600,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
         else
             for _, p in pairs(Players:GetPlayers()) do
                 pcall(function()
-                    if p.Character consummate
+                    if p.Character consummat
                         local highlight = p.Character:FindFirstChild("UniversalESP") if highlight then highlight:Destroy() end
                         for _, descendant in pairs(p.Character:GetDescendants()) do if descendant.Name == "ESPNameTag" then descendant:Destroy() end end
                     end
