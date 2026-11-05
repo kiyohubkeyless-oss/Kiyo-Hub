@@ -2255,7 +2255,7 @@ ServerTab:CreateButton({
 
 -- Info Tab
 InfoTab:CreateSection("Creator Profile")
-InfoTab:CreateButton({ Name = "Roblox Account: C1rest", Callback = function() end })
+InfoTab:CreateButton({ Name = "Roblox Account: Khanglord20148", Callback = function() end })
 InfoTab:CreateButton({ Name = "TikTok: @nguynkhanq", Callback = function() end })
 InfoTab:CreateButton({
     Name = "Discord: https://discord.gg/gfkNH3dxE (Click to copy)",
@@ -2341,33 +2341,52 @@ local antiTouchTimer = 0
 
 local isPrisonLife = (game.PlaceId == 155615604 or game.PlaceId == 606849622)
 
--- ==================== CƠ CHẾ AIMBOT CẢI TIẾN PRISON LIFE (ƯU TIÊN TUYỆT ĐỐI DẤU 💢) ====================
-local function isPlayerHostile(p)
-    local isHostile = false
+-- ==================== CƠ CHẾ AIMBOT THÍCH ỨNG (PRISON LIFE RIÊNG - GAME KHÁC RIÊNG KHÔNG BỊ TỊT) ====================
+local HostileMemory = {} -- Ký ức vũ khí/nguy hiểm cho Prison Life
+
+local function checkPrisonLifeThreat(p)
+    local isThreat = false
     pcall(function()
-        if p.Character then
-            -- Quét toàn bộ character xem có hiển thị dấu hiệu 💢, text hostile/combat hoặc billboard cảnh báo không
-            for _, desc in pairs(p.Character:GetDescendants()) do
-                if desc:IsA("BillboardGui") or desc:IsA("TextLabel") then
-                    local text = (desc:IsA("TextLabel") and desc.Text or desc.Name):lower()
-                    if text:find("💢") or text:find("hostile") or text:find("combat") then
-                        isHostile = true
-                        break
+        if not p.Character then return end
+        
+        -- Kiểm tra nhân vật hoặc balo có vũ khí/vật phẩm nguy hiểm (súng, taser, dao, búa, keycard)
+        local itemsToScan = {}
+        for _, item in pairs(p.Character:GetChildren()) do if item:IsA("Tool") then table.insert(itemsToScan, item) end end
+        if p:FindFirstChild("Backpack") then
+            for _, item in pairs(p.Backpack:GetChildren()) do if item:IsA("Tool") then table.insert(itemsToScan, item) end end
+        end
+
+        for _, tool in pairs(itemsToScan) do
+            local tName = tool.Name:lower()
+            if tName:find("gun") or tName:find("pistol") or tName:find("remington") or tName:find("ak") or tName:find("taser") or tName:find("hammer") or tName:find("knife") or tName:find("m9") or tName:find("shotgun") or tName:find("shield") or tName:find("keycard") or tName:find("card") then
+                isThreat = true
+                break
+            end
+        end
+
+        -- Kiểm tra nếu đấm tay không / tấn công cận chiến trực tiếp
+        local myChar = LocalPlayer.Character
+        if myChar and myChar:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (p.Character.HumanoidRootPart.Position - myChar.HumanoidRootPart.Position).Magnitude
+            if dist < 10 then
+                local hum = p.Character:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    for _, track in pairs(hum:GetPlayingAnimationTracks()) do
+                        local animName = track.Name:lower()
+                        if animName:find("punch") or animName:find("melee") or animName:find("attack") or animName:find("kick") then
+                            isThreat = true
+                            break
+                        end
                     end
                 end
             end
-            
-            -- Kiểm tra thêm các tag trạng thái thù địch sẵn có trong character hoặc player
-            if p.Character:FindFirstChild("Criminal") or p.Character:FindFirstChild("Hostile") or p.Character:FindFirstChild("Combat") then
-                isHostile = true
-            end
         end
-        
-        if p:FindFirstChild("status") and (p.status.Value == "Criminal" or p.status.Value == "Hostile") then
-            isHostile = true
+
+        if p.Character:FindFirstChild("Combat") or p.Character:FindFirstChild("Attacking") or p.Character:FindFirstChild("Criminal") then
+            isThreat = true
         end
     end)
-    return isHostile
+    return isThreat
 end
 
 local function getClosestPlayerToHead()
@@ -2385,26 +2404,51 @@ local function getClosestPlayerToHead()
                     continue
                 end
 
+                local hum = p.Character:FindFirstChildOfClass("Humanoid")
+                if not hum or hum.Health <= 0 then
+                    HostileMemory[p] = nil
+                    continue
+                end
+
+                local state = hum:GetState()
+                if state == Enum.HumanoidStateType.Dead or state == Enum.HumanoidStateType.Physics or hum.PlatformStand then
+                    continue
+                end
+
                 local targetTeam = p.Team and p.Team.Name or ""
-                local targetIsHostile = isPlayerHostile(p)
+                
+                -- Không bao giờ aim đồng đội ở mọi game
+                if targetTeam == myTeam and myTeam ~= "" then
+                    continue
+                end
+
                 local shouldTarget = false
 
-                -- LOGIC: Cứ có dấu 💢 hoặc thuộc phe thù địch/Criminal/Guards tùy theo phe của bạn
-                if targetIsHostile then
-                    shouldTarget = true
-                else
-                    if isPrisonLife then
-                        if myTeam == "Guards" then
-                            if targetTeam == "Criminals" then shouldTarget = true end
-                        elseif myTeam == "Criminals" then
-                            if targetTeam == "Guards" then shouldTarget = true end
-                        elseif myTeam == "Inmates" then
-                            if targetTeam == "Guards" or targetTeam == "Criminals" then shouldTarget = true end
-                        end
+                -- LUẬT 1: NẾU ĐANG CHƠI PRISON LIFE
+                if isPrisonLife then
+                    if checkPrisonLifeThreat(p) then
+                        HostileMemory[p] = true
+                    end
+
+                    if myTeam == "Criminals" then
+                        if targetTeam == "Guards" then shouldTarget = true
+                        elseif targetTeam == "Inmates" and HostileMemory[p] then shouldTarget = true end
+                    elseif myTeam == "Guards" then
+                        if targetTeam == "Criminals" then shouldTarget = true
+                        elseif targetTeam == "Inmates" and HostileMemory[p] then shouldTarget = true end
+                    elseif myTeam == "Inmates" then
+                        if targetTeam == "Guards" or targetTeam == "Criminals" then shouldTarget = true
+                        elseif targetTeam == "Inmates" and HostileMemory[p] then shouldTarget = true end
                     else
-                        if p.Team ~= LocalPlayer.Team then
-                            shouldTarget = true
-                        end
+                        if p.Team ~= LocalPlayer.Team then shouldTarget = true end
+                    end
+
+                -- LUẬT 2: NẾU ĐANG CHƠI CÁC GAME KHÁC (Aim mọi kẻ địch khác team hoặc free-for-all)
+                else
+                    if p.Team ~= LocalPlayer.Team then
+                        shouldTarget = true
+                    elseif myTeam == "" or not p.Team then
+                        shouldTarget = true
                     end
                 end
 
@@ -2412,29 +2456,22 @@ local function getClosestPlayerToHead()
                     continue
                 end
 
-                local hum = p.Character:FindFirstChildOfClass("Humanoid")
                 local head = p.Character:FindFirstChild("Head")
-                
-                if hum and hum.Health > 0 and not hum.PlatformStand then
-                    local state = hum:GetState()
-                    if state ~= Enum.HumanoidStateType.Dead and state ~= Enum.HumanoidStateType.Physics then
-                        if head then
-                            local rayParams = RaycastParams.new()
-                            rayParams.FilterType = Enum.RaycastFilterType.Exclude
-                            rayParams.FilterDescendantsInstances = {myChar, p.Character}
-                            rayParams.IgnoreWater = true
-                            
-                            local origin = Camera.CFrame.Position
-                            local direction = head.Position - origin
-                            local rayResult = workspace:Raycast(origin, direction, rayParams)
-                            
-                            if not rayResult then
-                                local dist = (head.Position - myHrp.Position).Magnitude
-                                if dist < shortestDistance then 
-                                    shortestDistance = dist 
-                                    closestPlayer = p 
-                                end
-                            end
+                if head then
+                    local rayParams = RaycastParams.new()
+                    rayParams.FilterType = Enum.RaycastFilterType.Exclude
+                    rayParams.FilterDescendantsInstances = {myChar, p.Character}
+                    rayParams.IgnoreWater = true
+                    
+                    local origin = Camera.CFrame.Position
+                    local direction = head.Position - origin
+                    local rayResult = workspace:Raycast(origin, direction, rayParams)
+                    
+                    if not rayResult then
+                        local dist = (head.Position - myHrp.Position).Magnitude
+                        if dist < shortestDistance then 
+                            shortestDistance = dist 
+                            closestPlayer = p 
                         end
                     end
                 end
