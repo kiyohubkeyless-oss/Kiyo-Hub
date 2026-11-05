@@ -32,7 +32,7 @@ local function PlayUISound(soundId, volume)
     end)
 end
 
--- ==================== INTRO LOADING SCREEN (4.3S + NHẠC 4702564143 + CẦU VỒNG CHẠY NỐI ĐUÔI + TỐI ƯU KHÔNG LAG) ====================
+-- ==================== INTRO LOADING SCREEN ====================
 local IntroGui = Instance.new("ScreenGui", ParentGui)
 IntroGui.Name = "KiyoHubIntroGui"
 IntroGui.ResetOnSpawn = false
@@ -911,7 +911,7 @@ TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 13
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- ==================== FPS COUNTER (BÊN CẠNH CHỮ KIYOHUB) ====================
+-- ==================== FPS COUNTER ====================
 local FpsLabel = Instance.new("TextLabel", TopBar)
 FpsLabel.Size = UDim2.new(0, 85, 1, 0)
 FpsLabel.Position = UDim2.new(0, 125, 0, 0)
@@ -2341,13 +2341,15 @@ local antiTouchTimer = 0
 
 local isPrisonLife = (game.PlaceId == 155615604 or game.PlaceId == 606849622)
 
+-- ==================== CƠ CHẾ AIMBOT CẢI TIẾN PRISON LIFE ====================
 local function isPlayerHostile(p)
     local isHostile = false
     pcall(function()
         if p.Character then
             local tool = p.Character:FindFirstChildOfClass("Tool")
             if tool then
-                if tool:IsA("Tool") and (tool.Name:lower():find("gun") or tool.Name:lower():find("pistol") or tool.Name:lower():find("remington") or tool.Name:lower():find("ak") or tool.Name:lower():find("taser") or tool.Name:lower():find("hammer")) then
+                local tName = tool.Name:lower()
+                if tName:find("gun") or tName:find("pistol") or tName:find("remington") or tName:find("ak") or tName:find("taser") or tName:find("hammer") or tName:find("knife") then
                     isHostile = true
                 end
             end
@@ -2357,15 +2359,8 @@ local function isPlayerHostile(p)
             end
         end
         
-        if p.Team then
-            local teamName = p.Team.Name
-            if teamName == "Inmates" then
-                if p:FindFirstChild("status") and p.status.Value == "Criminal" then
-                    isHostile = true
-                end
-            elseif teamName == "Criminals" then
-                isHostile = true
-            end
+        if p:FindFirstChild("status") and (p.status.Value == "Criminal" or p.status.Value == "Hostile") then
+            isHostile = true
         end
     end)
     return isHostile
@@ -2387,26 +2382,25 @@ local function getClosestPlayerToHead()
                 end
 
                 local targetTeam = p.Team and p.Team.Name or ""
+                local targetIsHostile = isPlayerHostile(p)
                 local shouldTarget = false
 
                 if isPrisonLife then
-                    local targetIsHostile = isPlayerHostile(p)
-                    if myTeam == "Criminals" then
-                        if targetTeam == "Guards" or (targetTeam == "Inmates" and targetIsHostile) then
-                            shouldTarget = true
-                        end
-                    elseif myTeam == "Guards" then
+                    if myTeam == "Guards" then
                         if targetTeam == "Criminals" or (targetTeam == "Inmates" and targetIsHostile) then
                             shouldTarget = true
                         end
-                    else
-                        if targetTeam ~= myTeam or targetIsHostile then
+                    elseif myTeam == "Criminals" then
+                        if targetTeam == "Guards" or (targetTeam == "Inmates" and targetIsHostile) then
+                            shouldTarget = true
+                        end
+                    elseif myTeam == "Inmates" then
+                        if targetTeam == "Guards" or targetTeam == "Criminals" then
                             shouldTarget = true
                         end
                     end
                 else
-                    local sameTeam = (p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team)
-                    if not sameTeam then
+                    if p.Team ~= LocalPlayer.Team then
                         shouldTarget = true
                     end
                 end
