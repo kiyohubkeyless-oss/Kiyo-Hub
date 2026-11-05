@@ -1041,7 +1041,6 @@ FloatButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Căn chỉnh lại vị trí menu danh sách tab (thụt lề sang phải, tránh tràn viền)
 local TabListFrame = Instance.new("ScrollingFrame", MainFrame)
 TabListFrame.Size = UDim2.new(0, 102, 1, -44)
 TabListFrame.Position = UDim2.new(0, 6, 0, 42)
@@ -1053,7 +1052,6 @@ local UIListLayoutTabs = Instance.new("UIListLayout", TabListFrame)
 UIListLayoutTabs.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayoutTabs.Padding = UDim.new(0, 4)
 
--- Căn chỉnh lại khung chứa nội dung bên phải cho gọn gàng
 local ContainerHolder = Instance.new("Frame", MainFrame)
 ContainerHolder.Size = UDim2.new(1, -118, 1, -44)
 ContainerHolder.Position = UDim2.new(0, 114, 0, 42)
@@ -2392,7 +2390,6 @@ local function getClosestPlayerToHead()
                 local shouldTarget = false
 
                 if isPrisonLife then
-                    -- Cơ chế dành riêng cho Prison Life
                     local targetIsHostile = isPlayerHostile(p)
                     if myTeam == "Criminals" then
                         if targetTeam == "Guards" or (targetTeam == "Inmates" and targetIsHostile) then
@@ -2408,7 +2405,6 @@ local function getClosestPlayerToHead()
                         end
                     end
                 else
-                    -- Cơ chế cho các Game khác: Aim người gần nhất + Team Check + Wall Check
                     local sameTeam = (p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team)
                     if not sameTeam then
                         shouldTarget = true
@@ -2426,7 +2422,6 @@ local function getClosestPlayerToHead()
                     local state = hum:GetState()
                     if state ~= Enum.HumanoidStateType.Dead and state ~= Enum.HumanoidStateType.Physics then
                         if head then
-                            -- Wall Check: Bỏ qua nếu có vật cản giữa Camera và Head của mục tiêu
                             local rayParams = RaycastParams.new()
                             rayParams.FilterType = Enum.RaycastFilterType.Exclude
                             rayParams.FilterDescendantsInstances = {myChar, p.Character}
@@ -2586,8 +2581,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                                         nameTag = Instance.new("BillboardGui", head)
                                         nameTag.Name, nameTag.Size, nameTag.StudsOffset, nameTag.AlwaysOnTop = "ESPNameTag", UDim2.new(0, 100, 0, 25), Vector3.new(0, 2, 0), true
                                         local textLabel = Instance.new("TextLabel", nameTag)
-                                        textLabel.Name, textLabel.Size, textLabel.BackgroundTransparency, textLabel.Font, textLabel.TextSize, text
-                                        StrokeTransparency = "Text", UDim2.new(1, 0, 1, 0), 1, Enum.Font.GothamBold, 10, 0.5
+                                        textLabel.Name, textLabel.Size, textLabel.BackgroundTransparency, textLabel.Font, textLabel.TextSize, textLabel.TextStrokeTransparency = "Text", UDim2.new(1, 0, 1, 0), 1, Enum.Font.GothamBold, 10, 0.5
                                     end
                                     local tLabel = nameTag:FindFirstChild("Text")
                                     if tLabel then tLabel.Text, tLabel.TextColor3 = p.DisplayName ~= "" and p.DisplayName or p.Name, rainbowColor end
@@ -2600,7 +2594,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
         else
             for _, p in pairs(Players:GetPlayers()) do
                 pcall(function()
-                    if p.Character consummat
+                    if p.Character then
                         local highlight = p.Character:FindFirstChild("UniversalESP") if highlight then highlight:Destroy() end
                         for _, descendant in pairs(p.Character:GetDescendants()) do if descendant.Name == "ESPNameTag" then descendant:Destroy() end end
                     end
