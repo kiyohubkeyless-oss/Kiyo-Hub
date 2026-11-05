@@ -2347,7 +2347,9 @@ local function isPlayerHostile(p)
         if p.Character then
             local tool = p.Character:FindFirstChildOfClass("Tool")
             if tool then
-                isHostile = true
+                if tool:IsA("Tool") and (tool.Name:lower():find("gun") or tool.Name:lower():find("pistol") or tool.Name:lower():find("remington") or tool.Name:lower():find("ak") or tool.Name:lower():find("taser") or tool.Name:lower():find("hammer")) then
+                    isHostile = true
+                end
             end
             
             if p.Character:FindFirstChild("Criminal") or p.Character:FindFirstChild("Hostile") then
@@ -2355,8 +2357,13 @@ local function isPlayerHostile(p)
             end
         end
         
-        if p.Team and p.Team.Name == "Inmates" then
-            if p:FindFirstChild("status") and p.status.Value == "Criminal" then
+        if p.Team then
+            local teamName = p.Team.Name
+            if teamName == "Inmates" then
+                if p:FindFirstChild("status") and p.status.Value == "Criminal" then
+                    isHostile = true
+                end
+            elseif teamName == "Criminals" then
                 isHostile = true
             end
         end
@@ -2371,6 +2378,7 @@ local function getClosestPlayerToHead()
         local myChar = LocalPlayer.Character
         if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
         local myHrp = myChar.HumanoidRootPart
+        local myTeam = LocalPlayer.Team and LocalPlayer.Team.Name or ""
 
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
@@ -2378,15 +2386,30 @@ local function getClosestPlayerToHead()
                     continue
                 end
 
-                local sameTeam = (p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team)
-                if sameTeam then
-                    continue
+                local targetTeam = p.Team and p.Team.Name or ""
+                local targetIsHostile = isPlayerHostile(p)
+                local shouldTarget = false
+
+                -- Quy tắc Prison Life chuẩn xác theo yêu cầu:
+                if myTeam == "Criminals" then
+                    -- Nếu bạn là Criminals: 100% aim Guards, 100% aim Inmates có tội (hostile), bỏ qua hoàn toàn Inmates vô tội và Criminals khác.
+                    if targetTeam == "Guards" or (targetTeam == "Inmates" and targetIsHostile) then
+                        shouldTarget = true
+                    end
+                elseif myTeam == "Guards" then
+                    -- Nếu bạn là Guards: 100% aim Criminals, 100% aim Inmates có tội (hostile), bỏ qua hoàn toàn Inmates vô tội và Guards khác.
+                    if targetTeam == "Criminals" or (targetTeam == "Inmates" and targetIsHostile) then
+                        shouldTarget = true
+                    end
+                else
+                    -- Dự phòng nếu ở Neutral / Inmates bình thường
+                    if targetTeam ~= myTeam or targetIsHostile then
+                        shouldTarget = true
+                    end
                 end
 
-                if p.Team and p.Team.Name == "Inmates" then
-                    if not isPlayerHostile(p) then
-                        continue
-                    end
+                if not shouldTarget then
+                    continue
                 end
 
                 local hum = p.Character:FindFirstChildOfClass("Humanoid")
