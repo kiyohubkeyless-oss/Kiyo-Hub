@@ -2341,6 +2341,8 @@ local loopTimer = 0
 local espUpdateTimer = 0
 local antiTouchTimer = 0
 
+local isPrisonLife = (game.PlaceId == 155615604 or game.PlaceId == 606849622)
+
 local function isPlayerHostile(p)
     local isHostile = false
     pcall(function()
@@ -2387,23 +2389,28 @@ local function getClosestPlayerToHead()
                 end
 
                 local targetTeam = p.Team and p.Team.Name or ""
-                local targetIsHostile = isPlayerHostile(p)
                 local shouldTarget = false
 
-                -- Quy tắc Prison Life chuẩn xác theo yêu cầu:
-                if myTeam == "Criminals" then
-                    -- Nếu bạn là Criminals: 100% aim Guards, 100% aim Inmates có tội (hostile), bỏ qua hoàn toàn Inmates vô tội và Criminals khác.
-                    if targetTeam == "Guards" or (targetTeam == "Inmates" and targetIsHostile) then
-                        shouldTarget = true
-                    end
-                elseif myTeam == "Guards" then
-                    -- Nếu bạn là Guards: 100% aim Criminals, 100% aim Inmates có tội (hostile), bỏ qua hoàn toàn Inmates vô tội và Guards khác.
-                    if targetTeam == "Criminals" or (targetTeam == "Inmates" and targetIsHostile) then
-                        shouldTarget = true
+                if isPrisonLife then
+                    -- Cơ chế dành riêng cho Prison Life
+                    local targetIsHostile = isPlayerHostile(p)
+                    if myTeam == "Criminals" then
+                        if targetTeam == "Guards" or (targetTeam == "Inmates" and targetIsHostile) then
+                            shouldTarget = true
+                        end
+                    elseif myTeam == "Guards" then
+                        if targetTeam == "Criminals" or (targetTeam == "Inmates" and targetIsHostile) then
+                            shouldTarget = true
+                        end
+                    else
+                        if targetTeam ~= myTeam or targetIsHostile then
+                            shouldTarget = true
+                        end
                     end
                 else
-                    -- Dự phòng nếu ở Neutral / Inmates bình thường
-                    if targetTeam ~= myTeam or targetIsHostile then
+                    -- Cơ chế cho các Game khác: Aim người gần nhất + Team Check + Wall Check
+                    local sameTeam = (p.Team and LocalPlayer.Team and p.Team == LocalPlayer.Team)
+                    if not sameTeam then
                         shouldTarget = true
                     end
                 end
@@ -2419,6 +2426,7 @@ local function getClosestPlayerToHead()
                     local state = hum:GetState()
                     if state ~= Enum.HumanoidStateType.Dead and state ~= Enum.HumanoidStateType.Physics then
                         if head then
+                            -- Wall Check: Bỏ qua nếu có vật cản giữa Camera và Head của mục tiêu
                             local rayParams = RaycastParams.new()
                             rayParams.FilterType = Enum.RaycastFilterType.Exclude
                             rayParams.FilterDescendantsInstances = {myChar, p.Character}
@@ -2591,7 +2599,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
         else
             for _, p in pairs(Players:GetPlayers()) do
                 pcall(function()
-                    if p.Character then
+                    if p.Character consummate
                         local highlight = p.Character:FindFirstChild("UniversalESP") if highlight then highlight:Destroy() end
                         for _, descendant in pairs(p.Character:GetDescendants()) do if descendant.Name == "ESPNameTag" then descendant:Destroy() end end
                     end
