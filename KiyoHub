@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Ultra Fix Lag + Anti-Cheat Bypass Speed/Jump)
+-- Roblox Delta Script - KIYO HUB (Auto Save Settings + Full Translation + Ultra Fix Lag + Anti-Cheat Bypass)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -18,6 +18,201 @@ if ParentGui:FindFirstChild("KiyoHubIntroGui") then ParentGui.KiyoHubIntroGui:De
 if ParentGui:FindFirstChild("KiyoHubUnloadGui") then ParentGui.KiyoHubUnloadGui:Destroy() end
 
 local Connections = {}
+local CurrentLanguage = "English"
+
+-- ==================== AUTO SAVE CONFIG SYSTEM ====================
+local SAVE_FILE_NAME = "KiyoHub_Settings.json"
+local AutoSaveEnabled = false
+local SavedStateData = {}
+
+local function LoadSavedConfig()
+    pcall(function()
+        if readfile and isfile and isfile(SAVE_FILE_NAME) then
+            local content = readfile(SAVE_FILE_NAME)
+            local data = HttpService:JSONDecode(content)
+            if data then
+                SavedStateData = data
+                if data.AutoSave ~= nil then AutoSaveEnabled = data.AutoSave end
+                if data.Language ~= nil then CurrentLanguage = data.Language end
+            end
+        end
+    end)
+end
+
+local function SaveCurrentConfig(currentStates, lang)
+    pcall(function()
+        if not AutoSaveEnabled then
+            if writefile and isfile and isfile(SAVE_FILE_NAME) then
+                delfile(SAVE_FILE_NAME)
+            end
+            return
+        end
+        if writefile then
+            local dataToSave = {
+                AutoSave = true,
+                Language = lang,
+                States = currentStates
+            }
+            writefile(SAVE_FILE_NAME, HttpService:JSONEncode(dataToSave))
+        end
+    end)
+end
+
+LoadSavedConfig()
+
+local Translations = {
+    English = {
+        Main = "Main",
+        Visuals = "Visuals",
+        Teleport = "Teleport",
+        Spectate = "Spectate",
+        Server = "Server",
+        Settings = "Settings",
+        Info = "Info",
+        Fly = "Fly",
+        Ragdoll = "Ragdoll",
+        Aimbot = "Aimbot",
+        InfJump = "Inf Jump",
+        Noclip = "Noclip",
+        AntiSlap = "Anti Slap",
+        AntiFling = "Anti Fling",
+        AirWalk = "Air Walk",
+        ShiftLock = "Shift Lock",
+        AutoJump = "Auto Jump",
+        WalkSpeed = "WalkSpeed",
+        JumpPower = "JumpPower",
+        Fart = "Fart",
+        Headless = "Headless",
+        ESP = "ESP Players",
+        XRay = "X-Ray",
+        FullBright = "Full Bright",
+        Stretched = "Stretched Screen",
+        FixLag = "Fix Lag",
+        SkyBox = "Sky Box",
+        Default = "Default",
+        Sunset = "Sunset",
+        Night = "Night",
+        ClickTP = "Click Teleport",
+        SafeSpot = "Safe Spot",
+        SafeSpotCount = "Safe Spot Count",
+        AutoClick = "Auto Click",
+        FakeLag = "Fake Lag",
+        TimeRewind = "Time Rewind",
+        TeleportAll = "Teleport All",
+        Spin = "Spin Ultra",
+        AnimSpeed = "Animation Speed",
+        Hitbox = "Hitbox Expander",
+        FastReset = "Fast Reset Button",
+        Gravity = "Gravity",
+        FOV = "FOV (1-120)",
+        SelectSpec = "Select Player to Spectate",
+        ToggleSpec = "Start / Stop Spectate",
+        LoopTarget = "Loop People (Target)",
+        LoopBtn = "Start/Stop Loop People",
+        FlingCtrl = "Fling Control",
+        SelectFling = "Select Target to Fling",
+        ClearFling = "Clear Fling Targets",
+        FlingBtn = "Start/Stop Fling",
+        Rejoin = "Rejoin Server",
+        HopLow = "Server Hop (Low Players)",
+        HopHigh = "Server Hop (High Players)",
+        SoundID = "Sound ID",
+        SoundPlaceholder = "Enter Sound ID",
+        PlaySound = "Play / Stop Sound",
+        LangTitle = "Language",
+        AutoSaveConfig = "Auto Save Config",
+        ScriptLoadTitle = "Script Loader",
+        ScriptPlaceholder = "Paste loadstring(game:HttpGet('...'))() here...",
+        ExecBtn = "Execute Script",
+        SelectPlayer = "Select Player",
+        None = "None",
+        CreatorProfile = "Creator Profile",
+        DiscordCopy = "Discord: https://discord.gg/gfkNH3dxE (Click to copy)",
+        UnloadTitle = "Are you sure?",
+        UnloadSub = "Do you want to unload KiyoHub completely?",
+        UnloadYes = "Yes (Unload)",
+        UnloadNo = "No"
+    },
+    Vietnamese = {
+        Main = "Chính",
+        Visuals = "Giao Diện",
+        Teleport = "Dịch Chuyển",
+        Spectate = "Theo Dõi",
+        Server = "Máy Chủ",
+        Settings = "Cài Đặt",
+        Info = "Thông Tin",
+        Fly = "Bay",
+        Ragdoll = "Đổ Người",
+        Aimbot = "Tự Động Ngắm",
+        InfJump = "Nhảy Vô Hạn",
+        Noclip = "Đi Xuyên Tường",
+        AntiSlap = "Kháng Đẩy",
+        AntiFling = "Chống Văng",
+        AirWalk = "Đi Trên Không",
+        ShiftLock = "Khóa Góc Nhìn",
+        AutoJump = "Tự Động Nhảy",
+        WalkSpeed = "Tốc Độ Đi",
+        JumpPower = "Độ Cao Nhảy",
+        Fart = "Đánh Rắm",
+        Headless = "Biến Mất Đầu",
+        ESP = "Nhìn Xuyên Người",
+        XRay = "X-Ray Bản Đồ",
+        FullBright = "Sáng Tối Đa",
+        Stretched = "Kéo Dãn Màn Hình",
+        FixLag = "Giảm Lag",
+        SkyBox = "Đổi Trời",
+        Default = "Mặc Định",
+        Sunset = "Hoàng Hôn",
+        Night = "Ban Đêm",
+        ClickTP = "Click Dịch Chuyển",
+        SafeSpot = "Điểm An Toàn",
+        SafeSpotCount = "Số Điểm Lưu",
+        AutoClick = "Tự Click",
+        FakeLag = "Lag Giả",
+        TimeRewind = "Tua Ngược Giờ",
+        TeleportAll = "Kéo Tất Cả",
+        Spin = "Xoay Vòng",
+        AnimSpeed = "Tốc Độ Hoạt Họa",
+        Hitbox = "Mở Rộng Hitbox",
+        FastReset = "Nút Reset Nhanh",
+        Gravity = "Trọng Lực",
+        FOV = "Góc Nhìn FOV",
+        SelectSpec = "Chọn Người Theo Dõi",
+        ToggleSpec = "Bật/Tắt Theo Dõi",
+        LoopTarget = "Mục Tiêu Bám Theo",
+        LoopBtn = "Bật/Tắt Bám Theo",
+        FlingCtrl = "Điều Khiển Văng",
+        SelectFling = "Chọn Mục Tiêu Văng",
+        ClearFling = "Xóa Mục Tiêu",
+        FlingBtn = "Bật/Tắt Văng",
+        Rejoin = "Vào Lại Server",
+        HopLow = "Đổi Server (Ít Người)",
+        HopHigh = "Đổi Server (Đông Người)",
+        SoundID = "Mã Âm Thanh",
+        SoundPlaceholder = "Nhập ID âm thanh...",
+        PlaySound = "Phát/Dừng Âm Thanh",
+        LangTitle = "Ngôn Ngữ",
+        AutoSaveConfig = "Tự Động Lưu Cấu Hình",
+        ScriptLoadTitle = "Chạy Script",
+        ScriptPlaceholder = "Dán loadstring(game:HttpGet('...'))() vào đây...",
+        ExecBtn = "Chạy Script",
+        SelectPlayer = "Chọn Người Chơi",
+        None = "Không",
+        CreatorProfile = "Thông Tin Tác Giả",
+        DiscordCopy = "Discord: https://discord.gg/gfkNH3dxE (Bấm để sao chép)",
+        UnloadTitle = "Bạn chắc chứ?",
+        UnloadSub = "Bạn có muốn tắt hoàn toàn KiyoHub không?",
+        UnloadYes = "Có (Tắt)",
+        UnloadNo = "Không"
+    }
+}
+
+local function GetText(key)
+    if Translations[CurrentLanguage] and Translations[CurrentLanguage][key] then
+        return Translations[CurrentLanguage][key]
+    end
+    return key
+end
 
 local function PlayUISound(soundId, volume)
     pcall(function()
@@ -292,6 +487,17 @@ local State = {
     FOV = 70
 }
 
+if SavedStateData and SavedStateData.States then
+    for k, v in pairs(SavedStateData.States) do
+        if State[k] ~= nil then
+            State[k] = v
+        end
+    end
+end
+if SavedStateData and SavedStateData.Language then
+    CurrentLanguage = SavedStateData.Language
+end
+
 local TargetPlayer = nil
 local SpectateTarget = nil
 local CurrentSound = nil
@@ -311,6 +517,10 @@ local r6JointsData = {}
 
 local noclipEnabled = false
 local noclipConnection = nil
+
+local function TriggerAutoSave()
+    SaveCurrentConfig(State, CurrentLanguage)
+end
 
 local function UnloadScript()
     pcall(function()
@@ -790,13 +1000,11 @@ local function isProtectedObject(obj)
     return success and result or false
 end
 
--- ==================== NÂNG CẤP FIX LAG MẠNH TAY HƠN (GIỮ NGUYÊN LOGIC CŨ & KHÔNG XÓA MỤC TIÊU QUAN TRỌNG) ====================
 local function cleanObject(obj)
     pcall(function()
         if not State.FixLag or isProtectedObject(obj) then return end
         
         if obj:IsA("BasePart") then
-            -- Tăng giới hạn kích thước quét để xóa bớt các vật thể phụ rườm rà gây lag map nặng tay hơn
             if obj.Size.Magnitude < 25 and not obj.Anchored and obj.Transparency < 1 then
                 pcall(function() obj:Destroy() end)
             else
@@ -806,7 +1014,6 @@ local function cleanObject(obj)
                 obj.CastShadow = false
             end
         elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("SpecialMesh") then
-            -- Xóa toàn bộ các texture/decal rác trên map giúp tăng mạnh FPS
             pcall(function() obj:Destroy() end)
         elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") or obj:IsA("Explosion") then
             pcall(function() obj:Destroy() end)
@@ -916,7 +1123,6 @@ TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 13
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- ==================== FPS COUNTER ====================
 local FpsLabel = Instance.new("TextLabel", TopBar)
 FpsLabel.Size = UDim2.new(0, 85, 1, 0)
 FpsLabel.Position = UDim2.new(0, 125, 0, 0)
@@ -947,6 +1153,8 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(dt)
     end
 end))
 
+local registeredUIElements = {}
+
 local UnloadGui = Instance.new("ScreenGui", ParentGui)
 UnloadGui.Name = "KiyoHubUnloadGui"
 UnloadGui.ResetOnSpawn = false
@@ -972,41 +1180,45 @@ local DialogTitle = Instance.new("TextLabel", UnloadDialog)
 DialogTitle.Size = UDim2.new(1, 0, 0, 40)
 DialogTitle.Position = UDim2.new(0, 0, 0, 15)
 DialogTitle.BackgroundTransparency = 1
-DialogTitle.Text = "Are you sure?"
+DialogTitle.Text = GetText("UnloadTitle")
 DialogTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 DialogTitle.Font = Enum.Font.GothamBold
 DialogTitle.TextSize = 18
+table.insert(registeredUIElements, {Type = "Label", Object = DialogTitle, Key = "UnloadTitle"})
 
 local DialogSub = Instance.new("TextLabel", UnloadDialog)
 DialogSub.Size = UDim2.new(1, 0, 0, 20)
 DialogSub.Position = UDim2.new(0, 0, 0, 45)
 DialogSub.BackgroundTransparency = 1
-DialogSub.Text = "Do you want to unload KiyoHub completely?"
+DialogSub.Text = GetText("UnloadSub")
 DialogSub.TextColor3 = Color3.fromRGB(160, 175, 200)
 DialogSub.Font = Enum.Font.Gotham
 DialogSub.TextSize = 11
+table.insert(registeredUIElements, {Type = "Label", Object = DialogSub, Key = "UnloadSub"})
 
 local YesBtn = Instance.new("TextButton", UnloadDialog)
 YesBtn.Size = UDim2.new(0, 115, 0, 32)
 YesBtn.Position = UDim2.new(0, 18, 1, -45)
 YesBtn.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
-YesBtn.Text = "Yes (Unload)"
+YesBtn.Text = GetText("UnloadYes")
 YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 YesBtn.Font = Enum.Font.GothamBold
 YesBtn.TextSize = 11
 Instance.new("UICorner", YesBtn).CornerRadius = UDim.new(0, 6)
 AddBounceEffect(YesBtn, UDim2.new(0, 115, 0, 32))
+table.insert(registeredUIElements, {Type = "Button", Object = YesBtn, Key = "UnloadYes"})
 
 local NoBtn = Instance.new("TextButton", UnloadDialog)
 NoBtn.Size = UDim2.new(0, 115, 0, 32)
 NoBtn.Position = UDim2.new(1, -133, 1, -45)
 NoBtn.BackgroundColor3 = Color3.fromRGB(35, 45, 60)
-NoBtn.Text = "No"
+NoBtn.Text = GetText("UnloadNo")
 NoBtn.TextColor3 = Color3.fromRGB(220, 230, 250)
 NoBtn.Font = Enum.Font.GothamBold
 NoBtn.TextSize = 11
 Instance.new("UICorner", NoBtn).CornerRadius = UDim.new(0, 6)
 AddBounceEffect(NoBtn, UDim2.new(0, 115, 0, 32))
+table.insert(registeredUIElements, {Type = "Button", Object = NoBtn, Key = "UnloadNo"})
 
 NoBtn.MouseButton1Click:Connect(function()
     UnloadGui.Enabled = false
@@ -1079,7 +1291,7 @@ local function ToggleSubMenuAnimation(menuFrame, show)
     end
 end
 
-local function CreateTab(name)
+local function CreateTab(nameKey)
     local tabScroll = Instance.new("ScrollingFrame", ContainerHolder)
     tabScroll.Size = UDim2.new(1, 0, 1, 0)
     tabScroll.BackgroundTransparency = 1
@@ -1099,12 +1311,14 @@ local function CreateTab(name)
     tabBtn.Size = UDim2.new(1, -6, 0, 28)
     tabBtn.Position = UDim2.new(0, 3, 0, 0)
     tabBtn.BackgroundColor3 = Color3.fromRGB(17, 21, 28)
-    tabBtn.Text = name
+    tabBtn.Text = GetText(nameKey)
     tabBtn.TextColor3 = Color3.fromRGB(150, 165, 190)
     tabBtn.Font = Enum.Font.GothamMedium
     tabBtn.TextSize = 11
     Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
     AddBounceEffect(tabBtn, UDim2.new(1, -6, 0, 28))
+    
+    table.insert(registeredUIElements, {Type = "TabButton", Object = tabBtn, Key = nameKey})
     
     tabBtn.MouseButton1Click:Connect(function()
         for _, t in pairs(Tabs) do
@@ -1124,7 +1338,7 @@ local function CreateTab(name)
         activeTab = tabScroll
     end
     
-    table.insert(Tabs, {Scroll = tabScroll, Button = tabBtn})
+    table.insert(Tabs, {Scroll = tabScroll, Button = tabBtn, NameKey = nameKey})
     
     local api = {}
     
@@ -1142,11 +1356,13 @@ local function CreateTab(name)
         label.Size = UDim2.new(1, -45, 1, 0)
         label.Position = UDim2.new(0, 8, 0, 0)
         label.BackgroundTransparency = 1
-        label.Text = data.Name
+        label.Text = GetText(data.Name)
         label.TextColor3 = Color3.fromRGB(210, 220, 235)
         label.Font = Enum.Font.Gotham
         label.TextSize = 11
         label.TextXAlignment = Enum.TextXAlignment.Left
+        
+        table.insert(registeredUIElements, {Type = "Label", Object = label, Key = data.Name})
         
         local toggleBtn = Instance.new("TextButton", frame)
         toggleBtn.Size = UDim2.new(0, 32, 0, 18)
@@ -1173,7 +1389,7 @@ local function CreateTab(name)
         Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
         
         local toggled = data.CurrentValue or false
-        local function updateToggle(val)
+        local function updateToggle(val, noSave)
             toggled = val
             PlayUISound(226892749, 1)
             if toggled then
@@ -1183,10 +1399,14 @@ local function CreateTab(name)
                 toggleBtn.BackgroundColor3 = Color3.fromRGB(35, 42, 55)
                 circle:TweenPosition(UDim2.new(0, 2, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
             end
+            if not noSave then
+                State[data.Name] = toggled
+                TriggerAutoSave()
+            end
             if data.Callback then pcall(function() data.Callback(toggled) end) end
         end
         
-        if toggled then updateToggle(true) end
+        if toggled then updateToggle(true, true) end
         
         toggleBtn.MouseButton1Click:Connect(function()
             updateToggle(not toggled)
@@ -1207,24 +1427,32 @@ local function CreateTab(name)
         label.Size = UDim2.new(0.5, 0, 1, 0)
         label.Position = UDim2.new(0, 8, 0, 0)
         label.BackgroundTransparency = 1
-        label.Text = data.Name
+        label.Text = GetText(data.Name)
         label.TextColor3 = Color3.fromRGB(210, 220, 235)
         label.Font = Enum.Font.Gotham
         label.TextSize = 11
         label.TextXAlignment = Enum.TextXAlignment.Left
+        
+        table.insert(registeredUIElements, {Type = "Label", Object = label, Key = data.Name})
         
         local textBox = Instance.new("TextBox", frame)
         textBox.Size = UDim2.new(0.42, 0, 0, 20)
         textBox.Position = UDim2.new(0.55, 0, 0.5, -10)
         textBox.BackgroundColor3 = Color3.fromRGB(24, 30, 40)
         textBox.Text = data.CurrentValue or ""
-        textBox.PlaceholderText = data.PlaceholderText or ""
+        textBox.PlaceholderText = data.PlaceholderKey and GetText(data.PlaceholderKey) or (data.PlaceholderText or "")
         textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
         textBox.Font = Enum.Font.Gotham
         textBox.TextSize = 11
         Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 4)
         
+        if data.PlaceholderKey then
+            table.insert(registeredUIElements, {Type = "Placeholder", Object = textBox, Key = data.PlaceholderKey})
+        end
+        
         textBox.FocusLost:Connect(function()
+            State[data.Name] = textBox.Text
+            TriggerAutoSave()
             if data.Callback then pcall(function() data.Callback(textBox.Text) end) end
         end)
     end
@@ -1243,22 +1471,29 @@ local function CreateTab(name)
         label.Size = UDim2.new(0.4, 0, 1, 0)
         label.Position = UDim2.new(0, 8, 0, 0)
         label.BackgroundTransparency = 1
-        label.Text = data.Name
+        label.Text = GetText(data.Name)
         label.TextColor3 = Color3.fromRGB(210, 220, 235)
         label.Font = Enum.Font.Gotham
         label.TextSize = 11
         label.TextXAlignment = Enum.TextXAlignment.Left
         
+        table.insert(registeredUIElements, {Type = "Label", Object = label, Key = data.Name})
+        
+        local selectedKey = data.CurrentOption or "Default"
+        
         local dropdownBtn = Instance.new("TextButton", frame)
         dropdownBtn.Size = UDim2.new(0.55, 0, 0, 20)
         dropdownBtn.Position = UDim2.new(0.43, 0, 0.5, -10)
         dropdownBtn.BackgroundColor3 = Color3.fromRGB(24, 30, 40)
-        dropdownBtn.Text = data.CurrentOption or "Default"
+        dropdownBtn.Text = GetText(selectedKey)
         dropdownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         dropdownBtn.Font = Enum.Font.Gotham
         dropdownBtn.TextSize = 10
         Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 4)
         AddBounceEffect(dropdownBtn, UDim2.new(0.55, 0, 0, 20))
+
+        local dropdownReg = {Type = "DropdownBtn", Object = dropdownBtn, Key = selectedKey}
+        table.insert(registeredUIElements, dropdownReg)
 
         local OptMenu = Instance.new("Frame", DropdownGui)
         OptMenu.Name = "OptMenu_" .. math.random(1000, 9999)
@@ -1279,11 +1514,12 @@ local function CreateTab(name)
         menuTitle.Size = UDim2.new(1, -30, 0, 28)
         menuTitle.Position = UDim2.new(0, 6, 0, 0)
         menuTitle.BackgroundTransparency = 1
-        menuTitle.Text = data.Name
+        menuTitle.Text = GetText(data.Name)
         menuTitle.TextColor3 = Color3.fromRGB(210, 220, 235)
         menuTitle.Font = Enum.Font.GothamBold
         menuTitle.TextSize = 11
         menuTitle.TextXAlignment = Enum.TextXAlignment.Left
+        table.insert(registeredUIElements, {Type = "Label", Object = menuTitle, Key = data.Name})
 
         local subCloseBtn = Instance.new("TextButton", OptMenu)
         subCloseBtn.Size = UDim2.new(0, 20, 0, 20)
@@ -1315,21 +1551,27 @@ local function CreateTab(name)
             scrollList.CanvasSize = UDim2.new(0, 0, 0, layoutList.AbsoluteContentSize.Y + 8)
         end)
 
-        for _, optName in ipairs(data.Options or {}) do
+        for _, optKey in ipairs(data.Options or {}) do
             local optBtn = Instance.new("TextButton", scrollList)
             optBtn.Size = UDim2.new(1, -4, 0, 26)
             optBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 33)
-            optBtn.Text = tostring(optName)
+            optBtn.Text = GetText(tostring(optKey))
             optBtn.TextColor3 = Color3.fromRGB(240, 245, 255)
             optBtn.Font = Enum.Font.GothamMedium
             optBtn.TextSize = 10
             Instance.new("UICorner", optBtn).CornerRadius = UDim.new(0, 5)
             AddBounceEffect(optBtn, UDim2.new(1, -4, 0, 26))
             
+            table.insert(registeredUIElements, {Type = "Button", Object = optBtn, Key = tostring(optKey)})
+            
             optBtn.MouseButton1Click:Connect(function()
-                dropdownBtn.Text = tostring(optName)
+                selectedKey = tostring(optKey)
+                dropdownReg.Key = selectedKey
+                dropdownBtn.Text = GetText(selectedKey)
                 ToggleSubMenuAnimation(OptMenu, false)
-                if data.Callback then pcall(function() data.Callback(optName) end) end
+                State[data.Name] = selectedKey
+                TriggerAutoSave()
+                if data.Callback then pcall(function() data.Callback(optKey) end) end
             end)
         end
 
@@ -1356,22 +1598,27 @@ local function CreateTab(name)
         label.Size = UDim2.new(0.4, 0, 1, 0)
         label.Position = UDim2.new(0, 8, 0, 0)
         label.BackgroundTransparency = 1
-        label.Text = data.Name
+        label.Text = GetText(data.Name)
         label.TextColor3 = Color3.fromRGB(210, 220, 235)
         label.Font = Enum.Font.Gotham
         label.TextSize = 11
         label.TextXAlignment = Enum.TextXAlignment.Left
         
+        table.insert(registeredUIElements, {Type = "Label", Object = label, Key = data.Name})
+        
         local dropdownBtn = Instance.new("TextButton", frame)
         dropdownBtn.Size = UDim2.new(0.55, 0, 0, 20)
         dropdownBtn.Position = UDim2.new(0.43, 0, 0.5, -10)
         dropdownBtn.BackgroundColor3 = Color3.fromRGB(24, 30, 40)
-        dropdownBtn.Text = data.CurrentOption or "None"
+        dropdownBtn.Text = GetText("None")
         dropdownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         dropdownBtn.Font = Enum.Font.Gotham
         dropdownBtn.TextSize = 10
         Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 4)
         AddBounceEffect(dropdownBtn, UDim2.new(0.55, 0, 0, 20))
+
+        local playerDropReg = {Type = "PlayerDropBtn", Object = dropdownBtn, IsNone = true}
+        table.insert(registeredUIElements, playerDropReg)
 
         local PlayerMenu = Instance.new("Frame", DropdownGui)
         PlayerMenu.Name = "PlayerMenu_" .. math.random(1000, 9999)
@@ -1392,11 +1639,12 @@ local function CreateTab(name)
         menuTitle.Size = UDim2.new(1, -30, 0, 28)
         menuTitle.Position = UDim2.new(0, 6, 0, 0)
         menuTitle.BackgroundTransparency = 1
-        menuTitle.Text = "Select Player"
+        menuTitle.Text = GetText("SelectPlayer")
         menuTitle.TextColor3 = Color3.fromRGB(210, 220, 235)
         menuTitle.Font = Enum.Font.GothamBold
         menuTitle.TextSize = 11
         menuTitle.TextXAlignment = Enum.TextXAlignment.Left
+        table.insert(registeredUIElements, {Type = "Label", Object = menuTitle, Key = "SelectPlayer"})
 
         local subCloseBtn = Instance.new("TextButton", PlayerMenu)
         subCloseBtn.Size = UDim2.new(0, 20, 0, 20)
@@ -1436,14 +1684,15 @@ local function CreateTab(name)
             local noneBtn = Instance.new("TextButton", scrollList)
             noneBtn.Size = UDim2.new(1, -4, 0, 26)
             noneBtn.BackgroundColor3 = Color3.fromRGB(20, 25, 33)
-            noneBtn.Text = "None"
+            noneBtn.Text = GetText("None")
             noneBtn.TextColor3 = Color3.fromRGB(180, 190, 205)
             noneBtn.Font = Enum.Font.GothamMedium
             noneBtn.TextSize = 10
             Instance.new("UICorner", noneBtn).CornerRadius = UDim.new(0, 5)
             AddBounceEffect(noneBtn, UDim2.new(1, -4, 0, 26))
             noneBtn.MouseButton1Click:Connect(function()
-                dropdownBtn.Text = "None"
+                playerDropReg.IsNone = true
+                dropdownBtn.Text = GetText("None")
                 ToggleSubMenuAnimation(PlayerMenu, false)
                 if data.Callback then pcall(function() data.Callback("None") end) end
             end)
@@ -1461,6 +1710,7 @@ local function CreateTab(name)
                     AddBounceEffect(pBtn, UDim2.new(1, -4, 0, 26))
                     
                     pBtn.MouseButton1Click:Connect(function()
+                        playerDropReg.IsNone = false
                         dropdownBtn.Text = p.DisplayName ~= "" and p.DisplayName or p.Name
                         ToggleSubMenuAnimation(PlayerMenu, false)
                         if data.Callback then pcall(function() data.Callback(p.DisplayName ~= "" and p.DisplayName or p.Name) end) end
@@ -1483,12 +1733,14 @@ local function CreateTab(name)
         local btn = Instance.new("TextButton", tabScroll)
         btn.Size = UDim2.new(1, -8, 0, 30)
         btn.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
-        btn.Text = data.Name
+        btn.Text = GetText(data.Name)
         btn.TextColor3 = Color3.fromRGB(210, 220, 235)
         btn.Font = Enum.Font.GothamBold
         btn.TextSize = 11
         Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
         AddBounceEffect(btn, UDim2.new(1, -8, 0, 30))
+        
+        table.insert(registeredUIElements, {Type = "Button", Object = btn, Key = data.Name})
         
         local stroke = Instance.new("UIStroke", btn)
         stroke.Color = Color3.fromRGB(30, 36, 48)
@@ -1499,15 +1751,17 @@ local function CreateTab(name)
         end)
     end
     
-    function api:CreateSection(name)
+    function api:CreateSection(nameKey)
         local secLabel = Instance.new("TextLabel", tabScroll)
         secLabel.Size = UDim2.new(1, -8, 0, 18)
         secLabel.BackgroundTransparency = 1
-        secLabel.Text = "  " .. name
+        secLabel.Text = "  " .. GetText(nameKey)
         secLabel.TextColor3 = Color3.fromRGB(110, 130, 160)
         secLabel.Font = Enum.Font.GothamBold
         secLabel.TextSize = 10
         secLabel.TextXAlignment = Enum.TextXAlignment.Left
+        
+        table.insert(registeredUIElements, {Type = "Section", Object = secLabel, Key = nameKey})
     end
     
     return api
@@ -1518,7 +1772,118 @@ local VisualTab = CreateTab("Visuals")
 local TeleportTab = CreateTab("Teleport")
 local SpectateTab = CreateTab("Spectate")
 local ServerTab = CreateTab("Server")
+local SettingsTab = CreateTab("Settings")
 local InfoTab = CreateTab("Info")
+
+SettingsTab:CreateSection("LangTitle")
+SettingsTab:CreateDropdown({
+    Name = "LangTitle",
+    Options = {"English", "Vietnamese"},
+    CurrentOption = CurrentLanguage,
+    Callback = function(Option)
+        CurrentLanguage = Option
+        TriggerAutoSave()
+        for _, ui in ipairs(registeredUIElements) do
+            pcall(function()
+                if ui.Type == "TabButton" then
+                    ui.Object.Text = GetText(ui.Key)
+                elseif ui.Type == "Label" or ui.Type == "Button" then
+                    ui.Object.Text = GetText(ui.Key)
+                elseif ui.Type == "Section" then
+                    ui.Object.Text = "  " .. GetText(ui.Key)
+                elseif ui.Type == "DropdownBtn" then
+                    ui.Object.Text = GetText(ui.Key)
+                elseif ui.Type == "PlayerDropBtn" and ui.IsNone then
+                    ui.Object.Text = GetText("None")
+                elseif ui.Type == "Placeholder" then
+                    ui.Object.PlaceholderText = GetText(ui.Key)
+                end
+            end)
+        end
+    end
+})
+
+SettingsTab:CreateSection("AutoSaveConfig")
+SettingsTab:CreateToggle({
+    Name = "AutoSaveConfig",
+    CurrentValue = AutoSaveEnabled,
+    Callback = function(Value)
+        AutoSaveEnabled = Value
+        TriggerAutoSave()
+    end
+})
+
+SettingsTab:CreateSection("ScriptLoadTitle")
+
+local scriptInputFrame = Instance.new("Frame")
+scriptInputFrame.Size = UDim2.new(1, -8, 0, 95)
+scriptInputFrame.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
+Instance.new("UICorner", scriptInputFrame).CornerRadius = UDim.new(0, 6)
+local scriptInputStroke = Instance.new("UIStroke", scriptInputFrame)
+scriptInputStroke.Color = Color3.fromRGB(30, 36, 48)
+scriptInputStroke.Thickness = 1
+
+local scriptScroll = Instance.new("ScrollingFrame", scriptInputFrame)
+scriptScroll.Size = UDim2.new(1, -12, 0, 56)
+scriptScroll.Position = UDim2.new(0, 6, 0, 5)
+scriptScroll.BackgroundTransparency = 1
+scriptScroll.CanvasSize = UDim2.new(0, 0, 0, 200)
+scriptScroll.ScrollBarThickness = 3
+
+local scriptTextBox = Instance.new("TextBox", scriptScroll)
+scriptTextBox.Size = UDim2.new(1, 0, 0, 200)
+scriptTextBox.Position = UDim2.new(0, 0, 0, 0)
+scriptTextBox.BackgroundTransparency = 1
+scriptTextBox.Text = ""
+scriptTextBox.PlaceholderText = GetText("ScriptPlaceholder")
+scriptTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+scriptTextBox.Font = Enum.Font.Code
+scriptTextBox.TextSize = 10
+scriptTextBox.TextXAlignment = Enum.TextXAlignment.Left
+scriptTextBox.TextYAlignment = Enum.TextYAlignment.Top
+scriptTextBox.TextWrapped = true
+scriptTextBox.MultiLine = true
+scriptTextBox.ClearTextOnFocus = false
+table.insert(registeredUIElements, {Type = "Placeholder", Object = scriptTextBox, Key = "ScriptPlaceholder"})
+
+local executeBtn = Instance.new("TextButton", scriptInputFrame)
+executeBtn.Size = UDim2.new(1, -12, 0, 24)
+executeBtn.Position = UDim2.new(0, 6, 0, 65)
+executeBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
+executeBtn.Text = GetText("ExecBtn")
+executeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+executeBtn.Font = Enum.Font.GothamBold
+executeBtn.TextSize = 10
+Instance.new("UICorner", executeBtn).CornerRadius = UDim.new(0, 4)
+AddBounceEffect(executeBtn, UDim2.new(1, -12, 0, 24))
+table.insert(registeredUIElements, {Type = "Button", Object = executeBtn, Key = "ExecBtn"})
+
+executeBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local code = scriptTextBox.Text
+        if code and code ~= "" then
+            task.spawn(function()
+                local success, err = pcall(function()
+                    loadstring(code)()
+                end)
+                if not success then
+                    warn("KiyoHub Script Error: " .. tostring(err))
+                end
+            end)
+        end
+    end)
+end)
+
+local settingsScrollTarget = nil
+for _, t in pairs(Tabs) do
+    if t.NameKey == "Settings" then
+        settingsScrollTarget = t.Scroll
+        break
+    end
+end
+if settingsScrollTarget then
+    scriptInputFrame.Parent = settingsScrollTarget
+end
 
 local function createSubButton(name, text, pos, size)
     local btnSize = size or UDim2.new(0, 36, 0, 36)
@@ -1786,7 +2151,7 @@ end
 
 MainTab:CreateToggle({
     Name = "Fly",
-    CurrentValue = false,
+    CurrentValue = State.Fly,
     Callback = function(Value)
         State.Fly = Value 
         SubFlyBtn.Visible = Value 
@@ -1804,7 +2169,7 @@ MainTab:CreateToggle({
 
 MainTab:CreateToggle({
     Name = "Ragdoll",
-    CurrentValue = false,
+    CurrentValue = State.Ragdoll,
     Callback = function(Value)
         State.Ragdoll = Value 
         SubRagdollBtn.Visible = Value 
@@ -1821,14 +2186,15 @@ MainTab:CreateToggle({
     end
 })
 
-MainTab:CreateToggle({ Name = "Aimbot", CurrentValue = false, Callback = function(Value) State.Aimbot = Value end })
-MainTab:CreateToggle({ Name = "Inf Jump", CurrentValue = false, Callback = function(Value) State.InfJump = Value end })
+MainTab:CreateToggle({ Name = "Aimbot", CurrentValue = State.Aimbot, Callback = function(Value) State.Aimbot = Value end })
+MainTab:CreateToggle({ Name = "InfJump", CurrentValue = State.InfJump, Callback = function(Value) State.InfJump = Value end })
 
 MainTab:CreateToggle({
    Name = "Noclip",
-   CurrentValue = false,
+   CurrentValue = State.Noclip,
    Callback = function(Value)
       noclipEnabled = Value
+      State.Noclip = Value
       if noclipEnabled then
          noclipConnection = game:GetService("RunService").Stepped:Connect(function()
             pcall(function()
@@ -1850,12 +2216,12 @@ MainTab:CreateToggle({
    end
 })
 
-MainTab:CreateToggle({ Name = "Anti Slap", CurrentValue = false, Callback = function(Value) State.AntiSlap = Value end })
-MainTab:CreateToggle({ Name = "Anti Fling", CurrentValue = false, Callback = function(Value) State.AntiFling = Value end })
-MainTab:CreateToggle({ Name = "Air Walk", CurrentValue = false, Callback = function(Value) State.AirWalk = Value if not Value then AirWalkPlatform.CanCollide = false end end })
+MainTab:CreateToggle({ Name = "AntiSlap", CurrentValue = State.AntiSlap, Callback = function(Value) State.AntiSlap = Value end })
+MainTab:CreateToggle({ Name = "AntiFling", CurrentValue = State.AntiFling, Callback = function(Value) State.AntiFling = Value end })
+MainTab:CreateToggle({ Name = "AirWalk", CurrentValue = State.AirWalk, Callback = function(Value) State.AirWalk = Value if not Value then AirWalkPlatform.CanCollide = false end end })
 MainTab:CreateToggle({
-    Name = "Shift Lock",
-    CurrentValue = false,
+    Name = "ShiftLock",
+    CurrentValue = State.ShiftLock,
     Callback = function(Value)
         State.ShiftLock = Value 
         SubShiftLockBtn.Visible = Value 
@@ -1869,11 +2235,11 @@ MainTab:CreateToggle({
         end
     end
 })
-MainTab:CreateToggle({ Name = "Auto Jump", CurrentValue = false, Callback = function(Value) State.AutoJump = Value end })
+MainTab:CreateToggle({ Name = "AutoJump", CurrentValue = State.AutoJump, Callback = function(Value) State.AutoJump = Value end })
 
 MainTab:CreateInput({
     Name = "WalkSpeed",
-    CurrentValue = "16",
+    CurrentValue = tostring(State.WalkSpeed),
     PlaceholderText = "16",
     Callback = function(Text)
         pcall(function()
@@ -1890,7 +2256,7 @@ MainTab:CreateInput({
 
 MainTab:CreateInput({
     Name = "JumpPower",
-    CurrentValue = "50",
+    CurrentValue = tostring(State.JumpPower),
     PlaceholderText = "50",
     Callback = function(Text)
         pcall(function()
@@ -1907,7 +2273,6 @@ MainTab:CreateInput({
     end
 })
 
--- ==================== ANTI-CHEAT BYPASS CHO SPEED & JUMP (GẮN HOOK LIÊN TỤC CHỐNG BỊ GAME ĐÈ LẠI) ====================
 table.insert(Connections, RunService.RenderStepped:Connect(function()
     pcall(function()
         local char = LocalPlayer.Character
@@ -1928,19 +2293,20 @@ table.insert(Connections, RunService.RenderStepped:Connect(function()
     end)
 end))
 
-VisualTab:CreateToggle({ Name = "Fart", CurrentValue = false, Callback = function(Value) State.Fart = Value SubFartBtn.Visible = Value end })
-VisualTab:CreateToggle({ Name = "Headless", CurrentValue = false, Callback = function(Value) State.Headless = Value local char = LocalPlayer.Character if char then applyHeadless(char, Value) end end })
-VisualTab:CreateToggle({ Name = "ESP Players", CurrentValue = false, Callback = function(Value) State.ESP = Value end })
-VisualTab:CreateToggle({ Name = "X-Ray", CurrentValue = false, Callback = function(Value) State.XRay = Value applyXRay(Value) end })
-VisualTab:CreateToggle({ Name = "Full Bright", CurrentValue = false, Callback = function(Value) State.FullBright = Value applyFullBright(Value) end })
-VisualTab:CreateToggle({ Name = "Stretched Screen", CurrentValue = false, Callback = function(Value) State.Stretched = Value end })
-VisualTab:CreateToggle({ Name = "Fix Lag", CurrentValue = false, Callback = function(Value) State.FixLag = Value applyFixLag(Value) end })
+VisualTab:CreateToggle({ Name = "Fart", CurrentValue = State.Fart, Callback = function(Value) State.Fart = Value SubFartBtn.Visible = Value end })
+VisualTab:CreateToggle({ Name = "Headless", CurrentValue = State.Headless, Callback = function(Value) State.Headless = Value local char = LocalPlayer.Character if char then applyHeadless(char, Value) end end })
+VisualTab:CreateToggle({ Name = "ESP", CurrentValue = State.ESP, Callback = function(Value) State.ESP = Value end })
+VisualTab:CreateToggle({ Name = "XRay", CurrentValue = State.XRay, Callback = function(Value) State.XRay = Value applyXRay(Value) end })
+VisualTab:CreateToggle({ Name = "FullBright", CurrentValue = State.FullBright, Callback = function(Value) State.FullBright = Value applyFullBright(Value) end })
+VisualTab:CreateToggle({ Name = "Stretched", CurrentValue = State.Stretched, Callback = function(Value) State.Stretched = Value end })
+VisualTab:CreateToggle({ Name = "FixLag", CurrentValue = State.FixLag, Callback = function(Value) State.FixLag = Value applyFixLag(Value) end })
 
 VisualTab:CreateDropdown({
-    Name = "Sky Box",
+    Name = "SkyBox",
     Options = {"Default", "Sunset", "Night"},
-    CurrentOption = "Default",
+    CurrentOption = State.SkyBox or "Default",
     Callback = function(Option)
+        State.SkyBox = Option
         pcall(function()
             local choice = Option
             if choice == "Sunset" then 
@@ -1955,8 +2321,8 @@ VisualTab:CreateDropdown({
 })
 
 TeleportTab:CreateToggle({
-    Name = "Click Teleport",
-    CurrentValue = false,
+    Name = "ClickTP",
+    CurrentValue = State.ClickTP,
     Callback = function(Value)
         State.ClickTP = Value 
         SubTPBtn.Visible = Value 
@@ -1970,8 +2336,8 @@ TeleportTab:CreateToggle({
 })
 
 TeleportTab:CreateToggle({
-    Name = "Safe Spot",
-    CurrentValue = false,
+    Name = "SafeSpot",
+    CurrentValue = State.SafeSpot,
     Callback = function(Value)
         State.SafeSpot = Value 
         if not Value then State.SafeSpots = {} end 
@@ -1980,8 +2346,8 @@ TeleportTab:CreateToggle({
 })
 
 TeleportTab:CreateInput({
-    Name = "Safe Spot Count",
-    CurrentValue = "3",
+    Name = "SafeSpotCount",
+    CurrentValue = tostring(State.SafeSpotCount),
     PlaceholderText = "3",
     Callback = function(Text)
         pcall(function()
@@ -1995,8 +2361,8 @@ TeleportTab:CreateInput({
 })
 
 TeleportTab:CreateToggle({
-    Name = "Auto Click",
-    CurrentValue = false,
+    Name = "AutoClick",
+    CurrentValue = State.AutoClick,
     Callback = function(Value)
         State.AutoClick = Value 
         SubAutoClickBtn.Visible = Value 
@@ -2011,8 +2377,8 @@ TeleportTab:CreateToggle({
 })
 
 TeleportTab:CreateToggle({
-    Name = "Fake Lag",
-    CurrentValue = false,
+    Name = "FakeLag",
+    CurrentValue = State.FakeLag,
     Callback = function(Value)
         State.FakeLag = Value 
         SubFakeLagBtn.Visible = Value 
@@ -2026,8 +2392,8 @@ TeleportTab:CreateToggle({
 })
 
 TeleportTab:CreateToggle({
-    Name = "Time Rewind",
-    CurrentValue = false,
+    Name = "TimeRewind",
+    CurrentValue = State.TimeRewind,
     Callback = function(Value)
         State.TimeRewind = Value 
         SubRewindBtn.Visible = Value 
@@ -2040,13 +2406,13 @@ TeleportTab:CreateToggle({
     end
 })
 
-TeleportTab:CreateToggle({ Name = "Teleport All", CurrentValue = false, Callback = function(Value) State.TeleportAll = Value end })
-TeleportTab:CreateToggle({ Name = "Spin Ultra", CurrentValue = false, Callback = function(Value) State.Spin = Value end })
-TeleportTab:CreateToggle({ Name = "Animation Speed", CurrentValue = false, Callback = function(Value) State.AnimationSpeed = Value end })
+TeleportTab:CreateToggle({ Name = "TeleportAll", CurrentValue = State.TeleportAll, Callback = function(Value) State.TeleportAll = Value end })
+TeleportTab:CreateToggle({ Name = "Spin", CurrentValue = State.Spin, Callback = function(Value) State.Spin = Value end })
+TeleportTab:CreateToggle({ Name = "AnimSpeed", CurrentValue = State.AnimSpeed, Callback = function(Value) State.AnimationSpeed = Value end })
 
 TeleportTab:CreateToggle({
-    Name = "Hitbox Expander",
-    CurrentValue = false,
+    Name = "Hitbox",
+    CurrentValue = State.HitboxExpander,
     Callback = function(Value)
         State.HitboxExpander = Value 
         if not Value then
@@ -2068,25 +2434,24 @@ TeleportTab:CreateToggle({
     end
 })
 
-TeleportTab:CreateToggle({ Name = "Fast Reset Button", CurrentValue = false, Callback = function(Value) FastResetSubBtn.Visible = Value end })
+TeleportTab:CreateToggle({ Name = "FastReset", CurrentValue = State.FastReset or false, Callback = function(Value) State.FastReset = Value FastResetSubBtn.Visible = Value end })
 
 TeleportTab:CreateInput({
     Name = "Gravity",
-    CurrentValue = "196.2",
+    CurrentValue = tostring(State.Gravity),
     PlaceholderText = "196.2",
     Callback = function(Text) pcall(function() local val = tonumber(Text) if val then State.Gravity = val Workspace.Gravity = val end end) end
 })
 
 TeleportTab:CreateInput({
-    Name = "FOV (1-120)",
-    CurrentValue = "70",
+    Name = "FOV",
+    CurrentValue = tostring(State.FOV),
     PlaceholderText = "70",
     Callback = function(Text) pcall(function() local val = tonumber(Text) if val then State.FOV = math.clamp(val, 1, 120) end end) end
 })
 
--- Spectate Tab
 SpectateTab:CreatePlayerDropdown({
-    Name = "Select Player to Spectate",
+    Name = "SelectSpec",
     CurrentOption = "None",
     Callback = function(Option)
         pcall(function()
@@ -2109,9 +2474,10 @@ SpectateTab:CreatePlayerDropdown({
 })
 
 SpectateTab:CreateToggle({
-    Name = "Start / Stop Spectate",
-    CurrentValue = false,
+    Name = "ToggleSpec",
+    CurrentValue = State.ToggleSpec or false,
     Callback = function(Value)
+        State.ToggleSpec = Value
         State.SpectateActive = Value
         if not Value then
             SpectateTarget = nil
@@ -2124,9 +2490,8 @@ SpectateTab:CreateToggle({
     end
 })
 
--- Loop People
 TeleportTab:CreatePlayerDropdown({
-    Name = "Loop People (Target)",
+    Name = "LoopTarget",
     CurrentOption = "None",
     Callback = function(Option)
         pcall(function()
@@ -2145,7 +2510,7 @@ TeleportTab:CreatePlayerDropdown({
 })
 
 TeleportTab:CreateButton({
-    Name = "Start/Stop Loop People",
+    Name = "LoopBtn",
     Callback = function()
         if TargetPlayer then
             State.LoopPeopleActive = not State.LoopPeopleActive
@@ -2154,11 +2519,10 @@ TeleportTab:CreateButton({
     end
 })
 
--- Fling Control
-TeleportTab:CreateSection("Fling Control")
+TeleportTab:CreateSection("FlingCtrl")
 
 TeleportTab:CreatePlayerDropdown({
-    Name = "Select Target to Fling",
+    Name = "SelectFling",
     CurrentOption = "None",
     Callback = function(Option)
         pcall(function()
@@ -2173,7 +2537,7 @@ TeleportTab:CreatePlayerDropdown({
 })
 
 TeleportTab:CreateButton({
-    Name = "Clear Fling Targets",
+    Name = "ClearFling",
     Callback = function()
         pcall(function()
             FlingTargets = {}
@@ -2184,7 +2548,7 @@ TeleportTab:CreateButton({
 })
 
 TeleportTab:CreateButton({
-    Name = "Start/Stop Fling",
+    Name = "FlingBtn",
     Callback = function()
         FlingActive = not FlingActive
         if FlingActive then
@@ -2204,9 +2568,8 @@ TeleportTab:CreateButton({
     end
 })
 
--- Server Tab
 ServerTab:CreateButton({
-    Name = "Rejoin Server",
+    Name = "Rejoin",
     Callback = function() 
         pcall(function() 
             if #Players:GetPlayers() <= 1 then TeleportService:Teleport(game.PlaceId, LocalPlayer) 
@@ -2216,7 +2579,7 @@ ServerTab:CreateButton({
 })
 
 ServerTab:CreateButton({
-    Name = "Server Hop (Low Players)",
+    Name = "HopLow",
     Callback = function()
         task.spawn(function()
             pcall(function()
@@ -2233,7 +2596,7 @@ ServerTab:CreateButton({
 })
 
 ServerTab:CreateButton({
-    Name = "Server Hop (High Players)",
+    Name = "HopHigh",
     Callback = function()
         task.spawn(function()
             pcall(function()
@@ -2251,14 +2614,14 @@ ServerTab:CreateButton({
 
 local soundIdInput = ""
 ServerTab:CreateInput({
-    Name = "Sound ID",
+    Name = "SoundID",
     CurrentValue = "",
-    PlaceholderText = "Enter Sound ID",
+    PlaceholderKey = "SoundPlaceholder",
     Callback = function(Text) soundIdInput = Text end
 })
 
 ServerTab:CreateButton({
-    Name = "Play / Stop Sound",
+    Name = "PlaySound",
     Callback = function()
         pcall(function()
             if not CurrentSound then
@@ -2279,12 +2642,11 @@ ServerTab:CreateButton({
     end
 })
 
--- Info Tab
-InfoTab:CreateSection("Creator Profile")
+InfoTab:CreateSection("CreatorProfile")
 InfoTab:CreateButton({ Name = "Roblox Account: Khanglord20148", Callback = function() end })
 InfoTab:CreateButton({ Name = "TikTok: @nguynkhanq", Callback = function() end })
 InfoTab:CreateButton({
-    Name = "Discord: https://discord.gg/gfkNH3dxE (Click to copy)",
+    Name = "DiscordCopy",
     Callback = function()
         pcall(function() if setclipboard then setclipboard("https://discord.gg/gfkNH3dxE") end end)
     end
@@ -2366,8 +2728,6 @@ local espUpdateTimer = 0
 local antiTouchTimer = 0
 
 local isPrisonLife = (game.PlaceId == 155615604 or game.PlaceId == 606849622)
-
--- ==================== PHẦN 1: AIMBOT RIÊNG CHO PRISON LIFE ====================
 local HostileMemory = {}
 
 local function checkPrisonLifeThreat(p)
@@ -2462,7 +2822,6 @@ for _, p in pairs(Players:GetPlayers()) do
     end
 end
 
--- ==================== PHẦN 2: HÀM LẤY MỤC TIÊU GẦN NHẤT CHO AIMBOT ====================
 local function getClosestPlayerToHead()
     local closestPlayer = nil
     local shortestDistance = math.huge
@@ -2751,7 +3110,7 @@ table.insert(Connections, RunService.Stepped:Connect(function(delta)
             if State.AntiSlap and hrp then
                 for _, part in pairs(char:GetDescendants()) do
                     pcall(function()
-                        if part:IsA("BasePart") then
+                        if part:IsA("BaseTest") or part:IsA("BasePart") then
                             for _, child in pairs(part:GetChildren()) do
                                 if child:IsA("BodyVelocity") or child:IsA("BodyThrust") or child:IsA("LinearVelocity") or child:IsA("VectorVelocity") or child:IsA("BodyForce") or child:IsA("BodyGyro") or child:IsA("BodyPosition") or child:IsA("AlignPosition") or child:IsA("VectorForce") or child:IsA("Torque") then
                                     if not (State.FlyActive and (child == flyBv or child == flyBg)) then child:Destroy() end
