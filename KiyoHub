@@ -1,4 +1,4 @@
--- Roblox Delta Script - KIYO HUB (Intro Neon Pro + Rainbow Flowing Loading Bar, Smooth Scale-Down, Zero Lag, Audio Separation, Headless Optimized)
+-- Roblox Delta Script - KIYO HUB (Ultra Fix Lag + Anti-Cheat Bypass Speed/Jump)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -790,19 +790,24 @@ local function isProtectedObject(obj)
     return success and result or false
 end
 
+-- ==================== NÂNG CẤP FIX LAG MẠNH TAY HƠN (GIỮ NGUYÊN LOGIC CŨ & KHÔNG XÓA MỤC TIÊU QUAN TRỌNG) ====================
 local function cleanObject(obj)
     pcall(function()
         if not State.FixLag or isProtectedObject(obj) then return end
         
         if obj:IsA("BasePart") then
-            if obj.Size.Magnitude < 12 and not obj.Anchored and obj.Transparency < 1 then
+            -- Tăng giới hạn kích thước quét để xóa bớt các vật thể phụ rườm rà gây lag map nặng tay hơn
+            if obj.Size.Magnitude < 25 and not obj.Anchored and obj.Transparency < 1 then
                 pcall(function() obj:Destroy() end)
             else
                 OriginalPartMaterials[obj] = obj.Material
-                obj.Material = Enum.Material.Plastic
+                obj.Material = Enum.Material.SmoothPlastic
                 obj.Reflectance = 0
                 obj.CastShadow = false
             end
+        elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("SpecialMesh") then
+            -- Xóa toàn bộ các texture/decal rác trên map giúp tăng mạnh FPS
+            pcall(function() obj:Destroy() end)
         elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") or obj:IsA("Explosion") then
             pcall(function() obj:Destroy() end)
         end
@@ -1902,6 +1907,27 @@ MainTab:CreateInput({
     end
 })
 
+-- ==================== ANTI-CHEAT BYPASS CHO SPEED & JUMP (GẮN HOOK LIÊN TỤC CHỐNG BỊ GAME ĐÈ LẠI) ====================
+table.insert(Connections, RunService.RenderStepped:Connect(function()
+    pcall(function()
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                if State.WalkSpeed and State.WalkSpeed ~= 16 and hum.WalkSpeed ~= State.WalkSpeed then
+                    hum.WalkSpeed = State.WalkSpeed
+                end
+                if State.JumpPower and State.JumpPower ~= 50 then
+                    hum.UseJumpPower = true
+                    if hum.JumpPower ~= State.JumpPower then
+                        hum.JumpPower = State.JumpPower
+                    end
+                end
+            end
+        end
+    end)
+end))
+
 VisualTab:CreateToggle({ Name = "Fart", CurrentValue = false, Callback = function(Value) State.Fart = Value SubFartBtn.Visible = Value end })
 VisualTab:CreateToggle({ Name = "Headless", CurrentValue = false, Callback = function(Value) State.Headless = Value local char = LocalPlayer.Character if char then applyHeadless(char, Value) end end })
 VisualTab:CreateToggle({ Name = "ESP Players", CurrentValue = false, Callback = function(Value) State.ESP = Value end })
@@ -2342,7 +2368,7 @@ local antiTouchTimer = 0
 local isPrisonLife = (game.PlaceId == 155615604 or game.PlaceId == 606849622)
 
 -- ==================== PHẦN 1: AIMBOT RIÊNG CHO PRISON LIFE ====================
-local HostileMemory = {} -- Ký ức ghi nhận đối tượng đã từng cầm súng lên tay (reset khi chết)
+local HostileMemory = {}
 
 local function checkPrisonLifeThreat(p)
     local isThreat = HostileMemory[p] or false
@@ -2351,8 +2377,6 @@ local function checkPrisonLifeThreat(p)
     pcall(function()
         if not p.Character then return end
         
-        -- Chỉ quét những món đồ ĐANG CẦM TRÊN TAY (equipped tool / descendant of character)
-        -- Hoàn toàn bỏ qua vũ khí nằm trong backpack (lượm nhưng chưa cầm lên tay)
         local equippedTool = nil
         for _, item in pairs(p.Character:GetChildren()) do
             if item:IsA("Tool") then
@@ -2368,7 +2392,6 @@ local function checkPrisonLifeThreat(p)
             end
         end
 
-        -- Kiểm tra nếu đang đấm / đánh cận chiến trực tiếp
         local myChar = LocalPlayer.Character
         if myChar and myChar:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("HumanoidRootPart") then
             local dist = (p.Character.HumanoidRootPart.Position - myChar.HumanoidRootPart.Position).Magnitude
@@ -2390,7 +2413,6 @@ local function checkPrisonLifeThreat(p)
             isThreat = true
         end
 
-        -- Nếu đã cầm lên tay thì ghi nhớ vĩnh viễn (kể cả khi cất đi) trong lúc còn sống
         if isThreat then
             HostileMemory[p] = true
         end
@@ -2398,7 +2420,6 @@ local function checkPrisonLifeThreat(p)
     return isThreat
 end
 
--- Lắng nghe sự kiện chết để reset ký ức thù địch (hồi sinh thành người vô tội)
 Players.PlayerAdded:Connect(function(p)
     p.CharacterAdded:Connect(function(char)
         HostileMemory[p] = nil
@@ -2469,14 +2490,12 @@ local function getClosestPlayerToHead()
 
                 local targetTeam = p.Team and p.Team.Name or ""
                 
-                -- Không bao giờ aim đồng đội ở mọi game
                 if targetTeam == myTeam and myTeam ~= "" then
                     continue
                 end
 
                 local shouldTarget = false
 
-                -- LUẬT 1: DÀNH RIÊNG CHO PRISON LIFE
                 if isPrisonLife then
                     local isDangerous = checkPrisonLifeThreat(p)
 
@@ -2492,8 +2511,6 @@ local function getClosestPlayerToHead()
                     else
                         if p.Team ~= LocalPlayer.Team then shouldTarget = true end
                     end
-
-                -- LUẬT 2: DÀNH CHO CÁC GAME KHÁC (Team check & Wallcheck bình thường)
                 else
                     if p.Team ~= LocalPlayer.Team then
                         shouldTarget = true
