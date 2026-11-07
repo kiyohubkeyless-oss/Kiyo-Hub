@@ -65,6 +65,7 @@ local Translations = {
         Main = "Main",
         Visuals = "Visuals",
         Teleport = "Teleport",
+        Misc = "Misc",
         Spectate = "Spectate",
         Server = "Server",
         Settings = "Settings",
@@ -137,6 +138,7 @@ local Translations = {
         Main = "Chính",
         Visuals = "Giao Diện",
         Teleport = "Dịch Chuyển",
+        Misc = "Khác",
         Spectate = "Theo Dõi",
         Server = "Máy Chủ",
         Settings = "Cài Đặt",
@@ -1269,6 +1271,10 @@ local UIListLayoutTabs = Instance.new("UIListLayout", TabListFrame)
 UIListLayoutTabs.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayoutTabs.Padding = UDim.new(0, 4)
 
+UIListLayoutTabs:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    TabListFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayoutTabs.AbsoluteContentSize.Y + 10)
+end)
+
 local ContainerHolder = Instance.new("Frame", MainFrame)
 ContainerHolder.Size = UDim2.new(1, -118, 1, -44)
 ContainerHolder.Position = UDim2.new(0, 114, 0, 42)
@@ -1770,6 +1776,7 @@ end
 local MainTab = CreateTab("Main")
 local VisualTab = CreateTab("Visuals")
 local TeleportTab = CreateTab("Teleport")
+local MiscTab = CreateTab("Misc")
 local SpectateTab = CreateTab("Spectate")
 local ServerTab = CreateTab("Server")
 local SettingsTab = CreateTab("Settings")
@@ -2360,135 +2367,7 @@ TeleportTab:CreateInput({
     end
 })
 
-TeleportTab:CreateToggle({
-    Name = "AutoClick",
-    CurrentValue = State.AutoClick,
-    Callback = function(Value)
-        State.AutoClick = Value 
-        SubAutoClickBtn.Visible = Value 
-        if not Value then 
-            State.AutoClickActive = false 
-            State.AutoClickSelecting = false 
-            SubAutoClickBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
-            SubAutoClickBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
-            SubAutoClickStroke.Color = Color3.fromRGB(35, 42, 55) 
-        end
-    end
-})
-
-TeleportTab:CreateToggle({
-    Name = "FakeLag",
-    CurrentValue = State.FakeLag,
-    Callback = function(Value)
-        State.FakeLag = Value 
-        SubFakeLagBtn.Visible = Value 
-        if not Value then 
-            State.FakeLagActive = false 
-            SubFakeLagBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
-            SubFakeLagBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
-            SubFakeLagStroke.Color = Color3.fromRGB(35, 42, 55) 
-        end
-    end
-})
-
-TeleportTab:CreateToggle({
-    Name = "TimeRewind",
-    CurrentValue = State.TimeRewind,
-    Callback = function(Value)
-        State.TimeRewind = Value 
-        SubRewindBtn.Visible = Value 
-        if not Value then 
-            State.TimeRewindActive = false 
-            SubRewindBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
-            SubRewindBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
-            SubRewindStroke.Color = Color3.fromRGB(35, 42, 55) 
-        end
-    end
-})
-
 TeleportTab:CreateToggle({ Name = "TeleportAll", CurrentValue = State.TeleportAll, Callback = function(Value) State.TeleportAll = Value end })
-TeleportTab:CreateToggle({ Name = "Spin", CurrentValue = State.Spin, Callback = function(Value) State.Spin = Value end })
-TeleportTab:CreateToggle({ Name = "AnimSpeed", CurrentValue = State.AnimSpeed, Callback = function(Value) State.AnimationSpeed = Value end })
-
-TeleportTab:CreateToggle({
-    Name = "Hitbox",
-    CurrentValue = State.HitboxExpander,
-    Callback = function(Value)
-        State.HitboxExpander = Value 
-        if not Value then
-            pcall(function()
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and p.Character then
-                        local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-                        if hrp and OriginalHitboxSizes[hrp] then
-                            pcall(function()
-                                hrp.Size = OriginalHitboxSizes[hrp]
-                                hrp.Transparency = 1
-                                hrp.CanCollide = false
-                            end)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-})
-
-TeleportTab:CreateToggle({ Name = "FastReset", CurrentValue = State.FastReset or false, Callback = function(Value) State.FastReset = Value FastResetSubBtn.Visible = Value end })
-
-TeleportTab:CreateInput({
-    Name = "Gravity",
-    CurrentValue = tostring(State.Gravity),
-    PlaceholderText = "196.2",
-    Callback = function(Text) pcall(function() local val = tonumber(Text) if val then State.Gravity = val Workspace.Gravity = val end end) end
-})
-
-TeleportTab:CreateInput({
-    Name = "FOV",
-    CurrentValue = tostring(State.FOV),
-    PlaceholderText = "70",
-    Callback = function(Text) pcall(function() local val = tonumber(Text) if val then State.FOV = math.clamp(val, 1, 120) end end) end
-})
-
-SpectateTab:CreatePlayerDropdown({
-    Name = "SelectSpec",
-    CurrentOption = "None",
-    Callback = function(Option)
-        pcall(function()
-            local displayName = Option
-            if displayName == "None" or not displayName then
-                SpectateTarget = nil
-                State.SpectateActive = false
-                pcall(function()
-                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                        Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                    end
-                end)
-            else
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and (p.DisplayName ~= "" and p.DisplayName or p.Name) == displayName then SpectateTarget = p break end
-                end
-            end
-        end)
-    end
-})
-
-SpectateTab:CreateToggle({
-    Name = "ToggleSpec",
-    CurrentValue = State.ToggleSpec or false,
-    Callback = function(Value)
-        State.ToggleSpec = Value
-        State.SpectateActive = Value
-        if not Value then
-            SpectateTarget = nil
-            pcall(function()
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                    Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                end
-            end)
-        end
-    end
-})
 
 TeleportTab:CreatePlayerDropdown({
     Name = "LoopTarget",
@@ -2568,6 +2447,135 @@ TeleportTab:CreateButton({
     end
 })
 
+MiscTab:CreateToggle({
+    Name = "AutoClick",
+    CurrentValue = State.AutoClick,
+    Callback = function(Value)
+        State.AutoClick = Value 
+        SubAutoClickBtn.Visible = Value 
+        if not Value then 
+            State.AutoClickActive = false 
+            State.AutoClickSelecting = false 
+            SubAutoClickBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
+            SubAutoClickBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
+            SubAutoClickStroke.Color = Color3.fromRGB(35, 42, 55) 
+        end
+    end
+})
+
+MiscTab:CreateToggle({
+    Name = "FakeLag",
+    CurrentValue = State.FakeLag,
+    Callback = function(Value)
+        State.FakeLag = Value 
+        SubFakeLagBtn.Visible = Value 
+        if not Value then 
+            State.FakeLagActive = false 
+            SubFakeLagBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
+            SubFakeLagBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
+            SubFakeLagStroke.Color = Color3.fromRGB(35, 42, 55) 
+        end
+    end
+})
+
+MiscTab:CreateToggle({
+    Name = "TimeRewind",
+    CurrentValue = State.TimeRewind,
+    Callback = function(Value)
+        State.TimeRewind = Value 
+        SubRewindBtn.Visible = Value 
+        if not Value then 
+            State.TimeRewindActive = false 
+            SubRewindBtn.BackgroundColor3 = Color3.fromRGB(20, 24, 32) 
+            SubRewindBtn.TextColor3 = Color3.fromRGB(220, 230, 250) 
+            SubRewindStroke.Color = Color3.fromRGB(35, 42, 55) 
+        end
+    end
+})
+
+MiscTab:CreateToggle({ Name = "Spin", CurrentValue = State.Spin, Callback = function(Value) State.Spin = Value end })
+MiscTab:CreateToggle({ Name = "AnimSpeed", CurrentValue = State.AnimSpeed, Callback = function(Value) State.AnimationSpeed = Value end })
+
+MiscTab:CreateToggle({
+    Name = "Hitbox",
+    CurrentValue = State.HitboxExpander,
+    Callback = function(Value)
+        State.HitboxExpander = Value 
+        if not Value then
+            pcall(function()
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character then
+                        local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp and OriginalHitboxSizes[hrp] then
+                            pcall(function()
+                                hrp.Size = OriginalHitboxSizes[hrp]
+                                hrp.Transparency = 1
+                                hrp.CanCollide = false
+                            end)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+MiscTab:CreateToggle({ Name = "FastReset", CurrentValue = State.FastReset or false, Callback = function(Value) State.FastReset = Value FastResetSubBtn.Visible = Value end })
+
+MiscTab:CreateInput({
+    Name = "Gravity",
+    CurrentValue = tostring(State.Gravity),
+    PlaceholderText = "196.2",
+    Callback = function(Text) pcall(function() local val = tonumber(Text) if val then State.Gravity = val Workspace.Gravity = val end end) end
+})
+
+MiscTab:CreateInput({
+    Name = "FOV",
+    CurrentValue = tostring(State.FOV),
+    PlaceholderText = "70",
+    Callback = function(Text) pcall(function() local val = tonumber(Text) if val then State.FOV = math.clamp(val, 1, 120) end end) end
+})
+
+SpectateTab:CreatePlayerDropdown({
+    Name = "SelectSpec",
+    CurrentOption = "None",
+    Callback = function(Option)
+        pcall(function()
+            local displayName = Option
+            if displayName == "None" or not displayName then
+                SpectateTarget = nil
+                State.SpectateActive = false
+                pcall(function()
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                        Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    end
+                end)
+            else
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and (p.DisplayName ~= "" and p.DisplayName or p.Name) == displayName then SpectateTarget = p break end
+                end
+            end
+        end)
+    end
+})
+
+SpectateTab:CreateToggle({
+    Name = "ToggleSpec",
+    CurrentValue = State.ToggleSpec or false,
+    Callback = function(Value)
+        State.ToggleSpec = Value
+        State.SpectateActive = Value
+        if not Value then
+            SpectateTarget = nil
+            pcall(function()
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                end
+            end)
+        end
+    end
+})
+
 ServerTab:CreateButton({
     Name = "Rejoin",
     Callback = function() 
@@ -2613,14 +2621,14 @@ ServerTab:CreateButton({
 })
 
 local soundIdInput = ""
-ServerTab:CreateInput({
+MiscTab:CreateInput({
     Name = "SoundID",
     CurrentValue = "",
     PlaceholderKey = "SoundPlaceholder",
     Callback = function(Text) soundIdInput = Text end
 })
 
-ServerTab:CreateButton({
+MiscTab:CreateButton({
     Name = "PlaySound",
     Callback = function()
         pcall(function()
