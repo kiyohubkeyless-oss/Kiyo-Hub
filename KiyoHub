@@ -18,7 +18,10 @@ if ParentGui:FindFirstChild("KiyoHubIntroGui") then ParentGui.KiyoHubIntroGui:De
 if ParentGui:FindFirstChild("KiyoHubUnloadGui") then ParentGui.KiyoHubUnloadGui:Destroy() end
 
 local Connections = {}
+local Running = true
+local CleanupFns = {}
 local CurrentLanguage = "English"
+local IsInitializing = true -- Biến cờ ngăn phát âm thanh lẹt xẹt khi khởi tạo toggle
 
 -- ==================== AUTO SAVE CONFIG SYSTEM ====================
 local SAVE_FILE_NAME = "KiyoHub_Settings.json"
@@ -39,10 +42,27 @@ local function LoadSavedConfig()
     end)
 end
 
+local SkipSaveKeys = { LoopPeople = true, ToggleSpec = true, TargetFling = true, AutoSaveConfig = true }
+
+local function SanitizeStates(states)
+    local clean = {}
+    for k, v in pairs(states) do
+        local t = type(v)
+        local isRuntime = type(k) ~= "string"
+            or k:sub(-6) == "Active"
+            or k:sub(-9) == "Selecting"
+            or SkipSaveKeys[k]
+        if not isRuntime and (t == "boolean" or t == "number" or t == "string") then
+            clean[k] = v
+        end
+    end
+    return clean
+end
+
 local function SaveCurrentConfig(currentStates, lang)
     pcall(function()
         if not AutoSaveEnabled then
-            if writefile and isfile and isfile(SAVE_FILE_NAME) then
+            if delfile and isfile and isfile(SAVE_FILE_NAME) then
                 delfile(SAVE_FILE_NAME)
             end
             return
@@ -51,7 +71,7 @@ local function SaveCurrentConfig(currentStates, lang)
             local dataToSave = {
                 AutoSave = true,
                 Language = lang,
-                States = currentStates
+                States = SanitizeStates(currentStates)
             }
             writefile(SAVE_FILE_NAME, HttpService:JSONEncode(dataToSave))
         end
@@ -413,6 +433,7 @@ task.spawn(function()
         end
     end
     
+    IsInitializing = false -- Tắt cờ khởi động sau khi intro chạy xong
     ScreenGui.Enabled = true
     DropdownGui.Enabled = true
     
@@ -480,6 +501,8 @@ local State = {
     Fart = false,
     Stretched = false,
     Headless = false,
+    FastReset = false,
+    SkyBox = "Default",
     FixLag = false,
     SpectateActive = false,
     TargetFling = false,
@@ -490,9 +513,13 @@ local State = {
 }
 
 if SavedStateData and SavedStateData.States then
-    for k, v in pairs(SavedStateData.States) do
-        if State[k] ~= nil then
-            State[k] = v
+    for k, v in pairs(SanitizeStates(SavedStateData.States)) do
+        local default = State[k]
+        if default ~= nil then
+            if type(default) == "number" and type(v) == "string" then v = tonumber(v) end
+            if type(v) == type(default) then
+                State[k] = v
+            end
         end
     end
 end
@@ -525,6 +552,8 @@ local function TriggerAutoSave()
 end
 
 local function UnloadScript()
+    Running = false
+    for _, fn in ipairs(CleanupFns) do pcall(fn) end
     pcall(function()
         for _, conn in ipairs(Connections) do
             if conn and typeof(conn) == "RBXScriptConnection" then
@@ -892,6 +921,7 @@ local function SkidFling(TargetPlayer)
     end
 end
 
+local RefreshSubButtons
 local flySpeed = 65
 local flyBv, flyBg
 local flyCharacter, flyHumanoid, flyRootPart
@@ -918,6 +948,7 @@ table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(newChar)
         setupFly()
         State.FlyActive = false
         State.RagdollActive = false
+        if RefreshSubButtons then RefreshSubButtons() end
         if flyBv then pcall(function() flyBv:Destroy() end) flyBv = nil end
         if flyBg then pcall(function() flyBg:Destroy() end) flyBg = nil end
         if not State.SpectateActive and Camera and newChar:FindFirstChildOfClass("Humanoid") then
@@ -1397,7 +1428,11 @@ local function CreateTab(nameKey)
         local toggled = data.CurrentValue or false
         local function updateToggle(val, noSave)
             toggled = val
-            PlayUISound(226892749, 1)
+            -- Chỉ phát âm thanh khi Hub đã load xong và người dùng chủ động bấm
+            if not IsInitializing then
+                PlayUISound(226892749, 1)
+            end
+            
             if toggled then
                 toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
                 circle:TweenPosition(UDim2.new(1, -16, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
@@ -1406,7 +1441,7 @@ local function CreateTab(nameKey)
                 circle:TweenPosition(UDim2.new(0, 2, 0.5, -7), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true)
             end
             if not noSave then
-                State[data.Name] = toggled
+                State[data.StateKey or data.Name] = toggled
                 TriggerAutoSave()
             end
             if data.Callback then pcall(function() data.Callback(toggled) end) end
@@ -1957,6 +1992,11 @@ SubRagdollBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
+RefreshSubButtons = function()
+    SubFlyBtn.BackgroundColor3, SubFlyBtn.TextColor3, SubFlyStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
+    SubRagdollBtn.BackgroundColor3, SubRagdollBtn.TextColor3, SubRagdollStroke.Color = Color3.fromRGB(20, 24, 32), Color3.fromRGB(220, 230, 250), Color3.fromRGB(35, 42, 55)
+end
+
 local SubFartBtn, SubFartStroke = createSubButton("SubFartBtn", "FART", UDim2.new(0.78, 0, 0.62, 0))
 SubFartBtn.MouseButton1Click:Connect(function() executeFart() end)
 
@@ -2308,24 +2348,31 @@ VisualTab:CreateToggle({ Name = "FullBright", CurrentValue = State.FullBright, C
 VisualTab:CreateToggle({ Name = "Stretched", CurrentValue = State.Stretched, Callback = function(Value) State.Stretched = Value end })
 VisualTab:CreateToggle({ Name = "FixLag", CurrentValue = State.FixLag, Callback = function(Value) State.FixLag = Value applyFixLag(Value) end })
 
+local function applySkyBox(choice)
+    pcall(function()
+        if choice == "Sunset" then
+            Lighting.ClockTime, Lighting.Brightness = 18, 1
+        elseif choice == "Night" then
+            Lighting.ClockTime, Lighting.Brightness = 0, 0.5
+        else
+            Lighting.ClockTime, Lighting.Brightness = OriginalLighting.ClockTime, OriginalLighting.Brightness
+        end
+    end)
+end
+
 VisualTab:CreateDropdown({
     Name = "SkyBox",
     Options = {"Default", "Sunset", "Night"},
     CurrentOption = State.SkyBox or "Default",
     Callback = function(Option)
         State.SkyBox = Option
-        pcall(function()
-            local choice = Option
-            if choice == "Sunset" then 
-                Lighting.ClockTime, Lighting.Brightness = 18, 1
-            elseif choice == "Night" then 
-                Lighting.ClockTime, Lighting.Brightness = 0, 0.5
-            else 
-                Lighting.ClockTime, Lighting.Brightness = OriginalLighting.ClockTime, OriginalLighting.Brightness
-            end
-        end)
+        applySkyBox(Option)
     end
 })
+
+if State.SkyBox == "Sunset" or State.SkyBox == "Night" then
+    applySkyBox(State.SkyBox)
+end
 
 TeleportTab:CreateToggle({
     Name = "ClickTP",
@@ -2494,10 +2541,11 @@ MiscTab:CreateToggle({
 })
 
 MiscTab:CreateToggle({ Name = "Spin", CurrentValue = State.Spin, Callback = function(Value) State.Spin = Value end })
-MiscTab:CreateToggle({ Name = "AnimSpeed", CurrentValue = State.AnimSpeed, Callback = function(Value) State.AnimationSpeed = Value end })
+MiscTab:CreateToggle({ Name = "AnimSpeed", StateKey = "AnimationSpeed", CurrentValue = State.AnimationSpeed, Callback = function(Value) State.AnimationSpeed = Value end })
 
 MiscTab:CreateToggle({
     Name = "Hitbox",
+    StateKey = "HitboxExpander",
     CurrentValue = State.HitboxExpander,
     Callback = function(Value)
         State.HitboxExpander = Value 
@@ -2689,7 +2737,7 @@ table.insert(Connections, UserInputService.InputBegan:Connect(function(input, ga
 end))
 
 task.spawn(function()
-    while true do
+    while Running do
         task.wait(0.15)
         pcall(function()
             if State.AutoClick and State.AutoClickActive then
@@ -2703,7 +2751,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while true do
+    while Running do
         task.wait(0.01)
         pcall(function()
             if State.TeleportAll then
@@ -2733,6 +2781,7 @@ local rainbowColor = Color3.fromRGB(0, 150, 80)
 local hue = 0
 local loopTimer = 0
 local espUpdateTimer = 0
+local espWasOn = false
 local antiTouchTimer = 0
 
 local isPrisonLife = (game.PlaceId == 155615604 or game.PlaceId == 606849622)
@@ -2788,46 +2837,23 @@ local function checkPrisonLifeThreat(p)
     return isThreat
 end
 
-Players.PlayerAdded:Connect(function(p)
-    p.CharacterAdded:Connect(function(char)
+local function trackPlayer(p)
+    local function onChar(char)
         HostileMemory[p] = nil
         local hum = char:WaitForChild("Humanoid", 5)
         if hum then
-            hum.Died:Connect(function()
+            table.insert(Connections, hum.Died:Connect(function()
                 HostileMemory[p] = nil
-            end)
+            end))
         end
-    end)
-end)
-
-for _, p in pairs(Players:GetPlayers()) do
-    if p.Character then
-        local hum = p.Character:FindFirstChildOfClass("Humanoid")
-        if hum then
-            hum.Died:Connect(function()
-                HostileMemory[p] = nil
-            end)
-        end
-        p.CharacterAdded:Connect(function(char)
-            HostileMemory[p] = nil
-            local newHum = char:WaitForChild("Humanoid", 5)
-            if newHum then
-                newHum.Died:Connect(function()
-                    HostileMemory[p] = nil
-                end)
-            end
-        end)
-    else
-        p.CharacterAdded:Connect(function(char)
-            HostileMemory[p] = nil
-            local newHum = char:WaitForChild("Humanoid", 5)
-            if newHum then
-                newHum.Died:Connect(function()
-                    HostileMemory[p] = nil
-                end)
-            end
-        end)
     end
+    table.insert(Connections, p.CharacterAdded:Connect(onChar))
+    if p.Character then task.spawn(onChar, p.Character) end
+end
+
+table.insert(Connections, Players.PlayerAdded:Connect(trackPlayer))
+for _, p in pairs(Players:GetPlayers()) do
+    trackPlayer(p)
 end
 
 local function getClosestPlayerToHead()
@@ -3027,6 +3053,7 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
 
         espUpdateTimer = espUpdateTimer + delta
         if State.ESP then
+            espWasOn = true
             hue = (hue + 0.01) % 1
             rainbowColor = Color3.fromHSV(hue, 0.8, 0.9)
             if espUpdateTimer >= 1.0 then
@@ -3059,7 +3086,8 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                     end)
                 end)
             end
-        else
+        elseif espWasOn then
+            espWasOn = false
             for _, p in pairs(Players:GetPlayers()) do
                 pcall(function()
                     if p.Character then
@@ -3135,6 +3163,90 @@ table.insert(Connections, RunService.Stepped:Connect(function(delta)
         end
     end)
 end))
+
+table.insert(CleanupFns, function()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+    local wasFakeLag = State.FakeLagActive
+    local wasRagdoll = State.RagdollActive
+    local wasAntiSlap = State.AntiSlap
+    local wasNoclip = State.Noclip
+
+    FlingActive = false
+    State.FlyActive, State.FakeLagActive, State.RagdollActive = false, false, false
+    State.TimeRewindActive, State.LoopPeopleActive = false, false
+    State.AutoClickActive, State.AutoClickSelecting = false, false
+    State.TeleportAll = false
+    pcall(function() workspace.FallenPartsDestroyHeight = getgenv().FPDH end)
+
+    noclipEnabled = false
+    if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
+    if wasNoclip and char then
+        for _, v in pairs(char:GetDescendants()) do
+            pcall(function() if v:IsA("BasePart") then v.CanCollide = true end end)
+        end
+    end
+
+    if flyBv then pcall(function() flyBv:Destroy() end) flyBv = nil end
+    if flyBg then pcall(function() flyBg:Destroy() end) flyBg = nil end
+
+    if hum then
+        hum.PlatformStand = false
+        hum.AutoRotate = true
+        if wasAntiSlap then
+            for _, st in ipairs({
+                Enum.HumanoidStateType.FallingDown,
+                Enum.HumanoidStateType.Ragdoll,
+                Enum.HumanoidStateType.Physics,
+                Enum.HumanoidStateType.PlatformStanding
+            }) do
+                pcall(function() hum:SetStateEnabled(st, true) end)
+            end
+        end
+    end
+
+    if char and wasRagdoll then applyRagdoll(char, false) end
+
+    if char and wasFakeLag then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then part.Anchored = false end
+        end
+    end
+
+    if CurrentSound then
+        pcall(function() CurrentSound:Stop() CurrentSound:Destroy() end)
+        CurrentSound = nil
+    end
+
+    for part, size in pairs(OriginalHitboxSizes) do
+        if part and part.Parent then
+            pcall(function()
+                part.Size = size
+                part.Transparency = 1
+                part.CanCollide = false
+            end)
+        end
+    end
+
+    for _, p in pairs(Players:GetPlayers()) do
+        pcall(function()
+            if p.Character then
+                local hl = p.Character:FindFirstChild("UniversalESP")
+                if hl then hl:Destroy() end
+                for _, d in pairs(p.Character:GetDescendants()) do
+                    if d.Name == "ESPNameTag" then d:Destroy() end
+                end
+            end
+        end)
+    end
+
+    if State.FullBright then applyFullBright(false) end
+    if State.XRay then applyXRay(false) end
+    if State.FixLag then applyFixLag(false) end
+    if State.Headless and char then applyHeadless(char, false) end
+    pcall(function() Camera.FieldOfView = 70 end)
+end)
 
 table.insert(Connections, UserInputService.JumpRequest:Connect(function(endEvent)
     pcall(function()
