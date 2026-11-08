@@ -42,7 +42,7 @@ local function LoadSavedConfig()
     end)
 end
 
-local SkipSaveKeys = { LoopPeople = true, ToggleSpec = true, TargetFling = true, AutoSaveConfig = true }
+local SkipSaveKeys = { LoopPeople = true, ToggleSpec = true, TargetFling = true, AutoSaveConfig = true, Freecam = true, SpamChat = true }
 
 local function SanitizeStates(states)
     local clean = {}
@@ -78,7 +78,51 @@ local function SaveCurrentConfig(currentStates, lang)
     end)
 end
 
+local LANG_FILE_NAME = "KiyoHub_Language.json"
+local OLD_LANG_FILE_NAME = "KiyoHub_Language.txt"
+local function LoadSavedLanguage()
+    pcall(function()
+        if not (readfile and isfile) then return end
+        if isfile(LANG_FILE_NAME) then
+            local ok, data = pcall(function() return HttpService:JSONDecode(readfile(LANG_FILE_NAME)) end)
+            if ok and type(data) == "table" and (data.Language == "English" or data.Language == "Vietnamese") then
+                CurrentLanguage = data.Language
+                return
+            end
+        end
+        if isfile(OLD_LANG_FILE_NAME) then
+            local lang = tostring(readfile(OLD_LANG_FILE_NAME)):gsub("%s+", "")
+            if lang == "English" or lang == "Vietnamese" then CurrentLanguage = lang end
+        end
+    end)
+end
+local function SaveLanguage(lang)
+    local ok = false
+    pcall(function()
+        if writefile then
+            writefile(LANG_FILE_NAME, HttpService:JSONEncode({ Language = tostring(lang) }))
+            -- đọc lại để chắc chắn đã ghi thành công
+            if isfile and readfile and isfile(LANG_FILE_NAME) then
+                local data = HttpService:JSONDecode(readfile(LANG_FILE_NAME))
+                ok = (type(data) == "table" and data.Language == tostring(lang))
+            else
+                ok = true
+            end
+        end
+    end)
+    if not ok then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Kiyo Hub",
+                Text = "Không lưu được ngôn ngữ: executor không cho ghi file (writefile).",
+                Duration = 5
+            })
+        end)
+    end
+end
+
 LoadSavedConfig()
+LoadSavedLanguage()
 
 local Translations = {
     English = {
@@ -113,6 +157,12 @@ local Translations = {
         Default = "Default",
         Sunset = "Sunset",
         Night = "Night",
+        Sunrise = "Sunrise",
+        Noon = "Noon",
+        Overcast = "Overcast",
+        BloodMoon = "Blood Moon",
+        Aurora = "Aurora",
+        Galaxy = "Galaxy",
         ClickTP = "Click Teleport",
         SafeSpot = "Safe Spot",
         SafeSpotCount = "Safe Spot Count",
@@ -137,6 +187,33 @@ local Translations = {
         Rejoin = "Rejoin Server",
         HopLow = "Server Hop (Low Players)",
         HopHigh = "Server Hop (High Players)",
+        HopRandom = "Server Hop (Random)",
+        Freecam = "Freecam",
+        FreecamSpeed = "Freecam Speed",
+        FlySpeed = "Fly Speed",
+        SaveMusic = "Save Music",
+        SaveMusicTitle = "Save Music",
+        MusicNamePH = "Song name",
+        MusicIdPH = "Sound ID",
+        MusicStart = "Start",
+        MusicStop = "Stop",
+        SpamChat = "Spam Chat",
+        SpamText = "Spam Message",
+        SpamDelay = "Spam Delay (sec)",
+        AnimSpeedValue = "Animation Speed Value",
+        Trail = "Trail",
+        TrailColor = "Trail Color",
+        Rain = "Rain",
+        Rainbow = "Rainbow",
+        Red = "Red",
+        Orange = "Orange",
+        Yellow = "Yellow",
+        Green = "Green",
+        Cyan = "Cyan",
+        Blue = "Blue",
+        Purple = "Purple",
+        Pink = "Pink",
+        White = "White",
         SoundID = "Sound ID",
         SoundPlaceholder = "Enter Sound ID",
         PlaySound = "Play / Stop Sound",
@@ -177,7 +254,7 @@ local Translations = {
         JumpPower = "Độ Cao Nhảy",
         Fart = "Đánh Rắm",
         Headless = "Biến Mất Đầu",
-        ESP = "Nhìn Xuyên Người",
+        ESP = "Định Vị Người Chơi",
         XRay = "X-Ray Bản Đồ",
         FullBright = "Sáng Tối Đa",
         Stretched = "Kéo Dãn Màn Hình",
@@ -186,13 +263,19 @@ local Translations = {
         Default = "Mặc Định",
         Sunset = "Hoàng Hôn",
         Night = "Ban Đêm",
+        Sunrise = "Bình Minh",
+        Noon = "Giữa Trưa",
+        Overcast = "Trời Âm U",
+        BloodMoon = "Trăng Máu",
+        Aurora = "Cực Quang",
+        Galaxy = "Thiên Hà",
         ClickTP = "Click Dịch Chuyển",
         SafeSpot = "Điểm An Toàn",
         SafeSpotCount = "Số Điểm Lưu",
         AutoClick = "Tự Click",
         FakeLag = "Lag Giả",
         TimeRewind = "Tua Ngược Giờ",
-        TeleportAll = "Kéo Tất Cả",
+        TeleportAll = "Dịch Chuyển Tất Cả",
         Spin = "Xoay Vòng",
         AnimSpeed = "Tốc Độ Hoạt Họa",
         Hitbox = "Mở Rộng Hitbox",
@@ -210,6 +293,33 @@ local Translations = {
         Rejoin = "Vào Lại Server",
         HopLow = "Đổi Server (Ít Người)",
         HopHigh = "Đổi Server (Đông Người)",
+        HopRandom = "Đổi Server (Ngẫu Nhiên)",
+        Freecam = "Camera Tự Do",
+        FreecamSpeed = "Tốc Độ Camera Tự Do",
+        FlySpeed = "Tốc Độ Bay",
+        SaveMusic = "Lưu Nhạc",
+        SaveMusicTitle = "Lưu Nhạc",
+        MusicNamePH = "Tên bài nhạc",
+        MusicIdPH = "ID nhạc",
+        MusicStart = "Bắt Đầu",
+        MusicStop = "Dừng",
+        SpamChat = "Spam Chat",
+        SpamText = "Câu Muốn Spam",
+        SpamDelay = "Giãn Cách Spam (giây)",
+        AnimSpeedValue = "Chỉ Số Tốc Độ Hoạt Họa",
+        Trail = "Vệt Sau Lưng",
+        TrailColor = "Màu Vệt",
+        Rain = "Mưa",
+        Rainbow = "Cầu Vồng",
+        Red = "Đỏ",
+        Orange = "Cam",
+        Yellow = "Vàng",
+        Green = "Xanh Lá",
+        Cyan = "Xanh Ngọc",
+        Blue = "Xanh Dương",
+        Purple = "Tím",
+        Pink = "Hồng",
+        White = "Trắng",
         SoundID = "Mã Âm Thanh",
         SoundPlaceholder = "Nhập ID âm thanh...",
         PlaySound = "Phát/Dừng Âm Thanh",
@@ -509,7 +619,17 @@ local State = {
     WalkSpeed = 16,
     JumpPower = 50,
     Gravity = 196.2,
-    FOV = 70
+    FOV = 70,
+    Freecam = false,
+    FreecamSpeed = 50,
+    FlySpeed = 65,
+    SpamChat = false,
+    SpamText = "",
+    SpamDelay = 5,
+    AnimSpeedValue = 40,
+    Trail = false,
+    TrailColor = "Rainbow",
+    Rain = false
 }
 
 if SavedStateData and SavedStateData.States then
@@ -526,6 +646,7 @@ end
 if SavedStateData and SavedStateData.Language then
     CurrentLanguage = SavedStateData.Language
 end
+LoadSavedLanguage() -- file ngôn ngữ riêng luôn được ưu tiên
 
 local TargetPlayer = nil
 local SpectateTarget = nil
@@ -922,7 +1043,7 @@ local function SkidFling(TargetPlayer)
 end
 
 local RefreshSubButtons
-local flySpeed = 65
+local flySpeed = tonumber(State.FlySpeed) or 65
 local flyBv, flyBg
 local flyCharacter, flyHumanoid, flyRootPart
 
@@ -1166,6 +1287,36 @@ FpsLabel.Font = Enum.Font.GothamBold
 FpsLabel.TextSize = 11
 FpsLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+local PingLabel = Instance.new("TextLabel", TopBar)
+PingLabel.Size = UDim2.new(0, 95, 1, 0)
+PingLabel.Position = UDim2.new(0, 190, 0, 0)
+PingLabel.BackgroundTransparency = 1
+PingLabel.Text = "Ping: --"
+PingLabel.TextColor3 = Color3.fromRGB(70, 255, 110)
+PingLabel.Font = Enum.Font.GothamBold
+PingLabel.TextSize = 11
+PingLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local StatsService = game:GetService("Stats")
+
+local function getPing()
+    local ok, v = pcall(function() return StatsService.Network.ServerStatsItem["Data Ping"]:GetValue() end)
+    if ok and type(v) == "number" and v > 0 then return v end
+    local ok2, p = pcall(function() return LocalPlayer:GetNetworkPing() * 2000 end)
+    if ok2 and type(p) == "number" then return p end
+    return nil
+end
+
+-- Xanh lá (thấp) -> vàng -> đỏ (cao)
+local function pingColor(ms)
+    local green, yellow, red = Color3.fromRGB(70, 255, 110), Color3.fromRGB(255, 220, 60), Color3.fromRGB(255, 60, 60)
+    if ms <= 50 then return green
+    elseif ms <= 150 then return green:Lerp(yellow, (ms - 50) / 100)
+    elseif ms <= 300 then return yellow:Lerp(red, (ms - 150) / 150)
+    end
+    return red
+end
+
 local fpsUpdateTimer = 0
 local frameCount = 0
 local currentFps = 60
@@ -1181,6 +1332,13 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(dt)
         else
             FpsLabel.TextColor3 = Color3.fromRGB(60, 255, 100)
         end
+        pcall(function()
+            local ms = getPing()
+            if ms then
+                PingLabel.Text = "Ping: " .. math.floor(ms + 0.5) .. " ms"
+                PingLabel.TextColor3 = pingColor(ms)
+            end
+        end)
         frameCount = 0
         fpsUpdateTimer = 0
     end
@@ -1824,6 +1982,7 @@ SettingsTab:CreateDropdown({
     CurrentOption = CurrentLanguage,
     Callback = function(Option)
         CurrentLanguage = Option
+        SaveLanguage(Option)
         TriggerAutoSave()
         for _, ui in ipairs(registeredUIElements) do
             pcall(function()
@@ -2214,6 +2373,19 @@ MainTab:CreateToggle({
     end
 })
 
+MainTab:CreateInput({
+    Name = "FlySpeed",
+    CurrentValue = tostring(State.FlySpeed),
+    PlaceholderText = "65",
+    Callback = function(Text)
+        local v = tonumber(Text)
+        if v then
+            State.FlySpeed = math.clamp(v, 1, 500)
+            flySpeed = State.FlySpeed
+        end
+    end
+})
+
 MainTab:CreateToggle({
     Name = "Ragdoll",
     CurrentValue = State.Ragdoll,
@@ -2348,21 +2520,56 @@ VisualTab:CreateToggle({ Name = "FullBright", CurrentValue = State.FullBright, C
 VisualTab:CreateToggle({ Name = "Stretched", CurrentValue = State.Stretched, Callback = function(Value) State.Stretched = Value end })
 VisualTab:CreateToggle({ Name = "FixLag", CurrentValue = State.FixLag, Callback = function(Value) State.FixLag = Value applyFixLag(Value) end })
 
+do
+local SkyPresets = {
+    Sunrise   = { Clock = 6,    Bright = 2,   Amb = {120,90,80},   Out = {190,140,110}, Top = {255,170,110}, Bot = {255,120,90},  Atmo = {255,190,140}, Density = 0.35 },
+    Noon      = { Clock = 12,   Bright = 3,   Amb = {140,150,170}, Out = {170,185,210}, Top = {255,255,255}, Bot = {200,220,255}, Atmo = {190,215,255}, Density = 0.2 },
+    Sunset    = { Clock = 18,   Bright = 1,   Amb = {110,70,60},   Out = {200,110,70},  Top = {255,120,60},  Bot = {255,80,60},   Atmo = {255,140,80},  Density = 0.4 },
+    Night     = { Clock = 0,    Bright = 0.5, Amb = {20,25,50},    Out = {35,45,85},    Top = {70,90,160},   Bot = {20,25,60},    Atmo = {25,30,70},    Density = 0.3 },
+    Overcast  = { Clock = 13,   Bright = 1.2, Amb = {110,115,120}, Out = {140,145,150}, Top = {170,175,180}, Bot = {130,135,140}, Atmo = {160,165,170}, Density = 0.6 },
+    BloodMoon = { Clock = 23,   Bright = 0.6, Amb = {70,10,10},    Out = {110,20,20},   Top = {200,30,30},   Bot = {120,10,10},   Atmo = {140,20,20},   Density = 0.45 },
+    Aurora    = { Clock = 1,    Bright = 0.8, Amb = {20,70,70},    Out = {40,120,110},  Top = {80,255,190},  Bot = {90,60,200},   Atmo = {60,200,170},  Density = 0.35 },
+    Galaxy    = { Clock = 2,    Bright = 0.7, Amb = {50,25,90},    Out = {80,45,140},   Top = {170,90,255},  Bot = {40,20,110},   Atmo = {90,50,170},   Density = 0.3 },
+}
+
 local function applySkyBox(choice)
     pcall(function()
-        if choice == "Sunset" then
-            Lighting.ClockTime, Lighting.Brightness = 18, 1
-        elseif choice == "Night" then
-            Lighting.ClockTime, Lighting.Brightness = 0, 0.5
-        else
-            Lighting.ClockTime, Lighting.Brightness = OriginalLighting.ClockTime, OriginalLighting.Brightness
+        local old = Lighting:FindFirstChild("KiyoAtmosphere")
+        local preset = SkyPresets[choice]
+        if not preset then
+            if old then old:Destroy() end
+            Lighting.ClockTime = OriginalLighting.ClockTime
+            Lighting.Brightness = OriginalLighting.Brightness
+            Lighting.Ambient = OriginalLighting.Ambient
+            Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
+            Lighting.ColorShift_Top = OriginalLighting.ColorShift_Top
+            Lighting.ColorShift_Bottom = OriginalLighting.ColorShift_Bottom
+            return
         end
+        local function c(t) return Color3.fromRGB(t[1], t[2], t[3]) end
+        Lighting.ClockTime = preset.Clock
+        Lighting.Brightness = preset.Bright
+        Lighting.Ambient = c(preset.Amb)
+        Lighting.OutdoorAmbient = c(preset.Out)
+        Lighting.ColorShift_Top = c(preset.Top)
+        Lighting.ColorShift_Bottom = c(preset.Bot)
+        if not old then
+            old = Instance.new("Atmosphere")
+            old.Name = "KiyoAtmosphere"
+            old.Parent = Lighting
+        end
+        old.Color = c(preset.Atmo)
+        old.Decay = c(preset.Atmo)
+        old.Density = preset.Density
+        old.Offset = 0.25
+        old.Glare = 0
+        old.Haze = 1
     end)
 end
 
 VisualTab:CreateDropdown({
     Name = "SkyBox",
-    Options = {"Default", "Sunset", "Night"},
+    Options = {"Default", "Sunrise", "Noon", "Sunset", "Night", "Overcast", "BloodMoon", "Aurora", "Galaxy"},
     CurrentOption = State.SkyBox or "Default",
     Callback = function(Option)
         State.SkyBox = Option
@@ -2370,8 +2577,200 @@ VisualTab:CreateDropdown({
     end
 })
 
-if State.SkyBox == "Sunset" or State.SkyBox == "Night" then
+if SkyPresets[State.SkyBox] then
     applySkyBox(State.SkyBox)
+end
+
+-- ==================== TRAIL ====================
+local TrailColors = {
+    Red = {255, 60, 60}, Orange = {255, 150, 40}, Yellow = {255, 225, 60}, Green = {70, 255, 110},
+    Cyan = {60, 230, 255}, Blue = {60, 110, 255}, Purple = {170, 90, 255}, Pink = {255, 110, 200}, White = {255, 255, 255}
+}
+local trailObj, trailAtt0, trailAtt1 = nil, nil, nil
+
+local function destroyTrail()
+    if trailObj then pcall(function() trailObj:Destroy() end) end
+    if trailAtt0 then pcall(function() trailAtt0:Destroy() end) end
+    if trailAtt1 then pcall(function() trailAtt1:Destroy() end) end
+    trailObj, trailAtt0, trailAtt1 = nil, nil, nil
+end
+
+local function rainbowSequence(offset)
+    local kps = {}
+    for i = 0, 6 do
+        kps[#kps + 1] = ColorSequenceKeypoint.new(i / 6, Color3.fromHSV((offset + i / 6) % 1, 1, 1))
+    end
+    return ColorSequence.new(kps)
+end
+
+local function currentTrailColor(offset)
+    local v = TrailColors[State.TrailColor]
+    if v then return ColorSequence.new(Color3.fromRGB(v[1], v[2], v[3])) end
+    return rainbowSequence(offset)
+end
+
+local function buildTrail()
+    destroyTrail()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    trailAtt0 = Instance.new("Attachment")
+    trailAtt0.Name = "KiyoTrailA0"
+    trailAtt0.Position = Vector3.new(0, 0.9, 0)
+    trailAtt0.Parent = hrp
+    trailAtt1 = Instance.new("Attachment")
+    trailAtt1.Name = "KiyoTrailA1"
+    trailAtt1.Position = Vector3.new(0, -0.9, 0)
+    trailAtt1.Parent = hrp
+    trailObj = Instance.new("Trail")
+    trailObj.Name = "KiyoTrail"
+    trailObj.Attachment0 = trailAtt0
+    trailObj.Attachment1 = trailAtt1
+    trailObj.Lifetime = 0.8
+    trailObj.MinLength = 0.05
+    trailObj.FaceCamera = true
+    trailObj.LightEmission = 0.6
+    trailObj.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1)})
+    trailObj.WidthScale = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0)})
+    trailObj.Color = currentTrailColor(os.clock() * 0.3 % 1)
+    trailObj.Parent = hrp
+end
+
+table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(char)
+    if not State.Trail then return end
+    task.spawn(function()
+        char:WaitForChild("HumanoidRootPart", 5)
+        if State.Trail and Running then buildTrail() end
+    end)
+end))
+
+local trailAccum = 0
+table.insert(Connections, RunService.Heartbeat:Connect(function(dt)
+    if not State.Trail or not trailObj or not trailObj.Parent then return end
+    if TrailColors[State.TrailColor] then return end
+    trailAccum = trailAccum + dt
+    if trailAccum < 0.1 then return end
+    trailAccum = 0
+    pcall(function() trailObj.Color = rainbowSequence(os.clock() * 0.3 % 1) end)
+end))
+
+VisualTab:CreateToggle({
+    Name = "Trail",
+    CurrentValue = State.Trail,
+    Callback = function(Value)
+        if Value then buildTrail() else destroyTrail() end
+    end
+})
+
+VisualTab:CreateDropdown({
+    Name = "TrailColor",
+    Options = {"Rainbow", "Red", "Orange", "Yellow", "Green", "Cyan", "Blue", "Purple", "Pink", "White"},
+    CurrentOption = State.TrailColor or "Rainbow",
+    Callback = function(Option)
+        State.TrailColor = tostring(Option)
+        if trailObj and trailObj.Parent then
+            pcall(function() trailObj.Color = currentTrailColor(os.clock() * 0.3 % 1) end)
+        end
+    end
+})
+
+-- ==================== RAIN ====================
+local rainParts, rainEmitters = {}, {}
+local rainSpeed = 95
+local rainFall = 60
+local rainParams = RaycastParams.new()
+rainParams.FilterType = Enum.RaycastFilterType.Exclude
+
+local function destroyRain()
+    for _, p in ipairs(rainParts) do pcall(function() p:Destroy() end) end
+    rainParts, rainEmitters = {}, {}
+end
+
+-- Mỗi lớp mưa là 1 Part trong suốt phía trên đầu, phát hạt rơi xuống đất
+local function makeRainLayer(areaSize, rate, particleSize, transparency)
+    local p = Instance.new("Part")
+    p.Name = "KiyoRain"
+    p.Anchored = true
+    p.CanCollide = false
+    p.CanQuery = false
+    p.CanTouch = false
+    p.CastShadow = false
+    p.Transparency = 1
+    p.Size = Vector3.new(areaSize, 1, areaSize)
+
+    local lt = rainFall / rainSpeed
+    local e = Instance.new("ParticleEmitter")
+    e.Name = "KiyoRainEmitter"
+    e.EmissionDirection = Enum.NormalId.Bottom
+    e.Rate = rate
+    e.Lifetime = NumberRange.new(lt * 0.95, lt * 1.05)
+    e.Speed = NumberRange.new(rainSpeed * 0.9, rainSpeed * 1.1)
+    e.Acceleration = Vector3.new(5, 0, 2) -- gió rất nhẹ
+    e.SpreadAngle = Vector2.new(0, 0)
+    e.Orientation = Enum.ParticleOrientation.FacingCamera -- vệt luôn thẳng đứng trên màn hình
+    e.Size = NumberSequence.new(particleSize)
+    e.Squash = NumberSequence.new(3)
+    e.Transparency = NumberSequence.new(transparency)
+    e.Color = ColorSequence.new(Color3.fromRGB(70, 130, 255))
+    e.LightEmission = 0.15
+    e.LightInfluence = 0.3
+    e.Drag = 0
+    e.Parent = p
+
+    p.Parent = workspace.CurrentCamera or workspace
+    table.insert(rainParts, p)
+    table.insert(rainEmitters, e)
+end
+
+local function buildRain()
+    destroyRain()
+    makeRainLayer(46, 380, 1.4, 0.3)   -- lớp gần: dày, nhìn rõ
+    makeRainLayer(180, 650, 2.4, 0.45) -- lớp xa: phủ rộng quanh người chơi
+end
+
+local rainAccum = 0.2
+table.insert(Connections, RunService.RenderStepped:Connect(function(dt)
+    if not State.Rain or #rainParts == 0 then return end
+    local cam = workspace.CurrentCamera
+    if not cam then return end
+    local pos = cam.CFrame.Position
+
+    -- 5 lần/giây: dò mặt đất bên dưới để hạt mưa tắt đúng lúc chạm đất
+    rainAccum = rainAccum + dt
+    if rainAccum >= 0.2 then
+        rainAccum = 0
+        pcall(function()
+            local char = LocalPlayer.Character
+            rainParams.FilterDescendantsInstances = char and {char} or {}
+            local hit = workspace:Raycast(pos, Vector3.new(0, -300, 0), rainParams)
+            local fall = hit and (pos.Y + 35 - hit.Position.Y) or 70
+            fall = math.clamp(fall, 20, 120)
+            if math.abs(fall - rainFall) > 2 then
+                rainFall = fall
+                local lt = fall / rainSpeed
+                for _, e in ipairs(rainEmitters) do
+                    e.Lifetime = NumberRange.new(lt * 0.95, lt * 1.05)
+                end
+            end
+        end)
+    end
+
+    local top = CFrame.new(pos + Vector3.new(0, 35, 0))
+    for _, p in ipairs(rainParts) do p.CFrame = top end
+end))
+
+VisualTab:CreateToggle({
+    Name = "Rain",
+    CurrentValue = State.Rain,
+    Callback = function(Value)
+        if Value then buildRain() else destroyRain() end
+    end
+})
+
+table.insert(CleanupFns, function()
+    destroyTrail()
+    destroyRain()
+end)
 end
 
 TeleportTab:CreateToggle({
@@ -2541,7 +2940,34 @@ MiscTab:CreateToggle({
 })
 
 MiscTab:CreateToggle({ Name = "Spin", CurrentValue = State.Spin, Callback = function(Value) State.Spin = Value end })
-MiscTab:CreateToggle({ Name = "AnimSpeed", StateKey = "AnimationSpeed", CurrentValue = State.AnimationSpeed, Callback = function(Value) State.AnimationSpeed = Value end })
+MiscTab:CreateToggle({
+    Name = "AnimSpeed",
+    StateKey = "AnimationSpeed",
+    CurrentValue = State.AnimationSpeed,
+    Callback = function(Value)
+        State.AnimationSpeed = Value
+        if not Value then
+            pcall(function()
+                local char = LocalPlayer.Character
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                local animator = hum and hum:FindFirstChildOfClass("Animator")
+                if animator then
+                    for _, track in pairs(animator:GetPlayingAnimationTracks()) do track:AdjustSpeed(1) end
+                end
+            end)
+        end
+    end
+})
+
+MiscTab:CreateInput({
+    Name = "AnimSpeedValue",
+    CurrentValue = tostring(State.AnimSpeedValue),
+    PlaceholderText = "40",
+    Callback = function(Text)
+        local v = tonumber(Text)
+        if v then State.AnimSpeedValue = math.clamp(v, 0, 1000) end
+    end
+})
 
 MiscTab:CreateToggle({
     Name = "Hitbox",
@@ -2569,6 +2995,201 @@ MiscTab:CreateToggle({
 })
 
 MiscTab:CreateToggle({ Name = "FastReset", CurrentValue = State.FastReset or false, Callback = function(Value) State.FastReset = Value FastResetSubBtn.Visible = Value end })
+
+do
+-- ==================== SPAM CHAT ====================
+local TextChatService = game:GetService("TextChatService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local spamToken = 0
+
+local function sendChat(msg)
+    pcall(function()
+        local sent = false
+        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+            local channels = TextChatService:FindFirstChild("TextChannels")
+            local general = channels and channels:FindFirstChild("RBXGeneral")
+            if general then
+                general:SendAsync(msg)
+                sent = true
+            end
+        end
+        if not sent then
+            local ev = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+            local say = ev and ev:FindFirstChild("SayMessageRequest")
+            if say then say:FireServer(msg, "All") end
+        end
+    end)
+end
+
+local function startSpam()
+    spamToken = spamToken + 1
+    local myToken = spamToken
+    task.spawn(function()
+        while Running and State.SpamChat and spamToken == myToken do
+            local msg = tostring(State.SpamText or ""):sub(1, 200)
+            if msg:match("%S") then sendChat(msg) end
+            local delay = math.max(tonumber(State.SpamDelay) or 5, 3) -- tối thiểu 3 giây giữa mỗi tin
+            local waited = 0
+            while waited < delay and Running and State.SpamChat and spamToken == myToken do
+                task.wait(0.25)
+                waited = waited + 0.25
+            end
+        end
+    end)
+end
+
+MiscTab:CreateToggle({
+    Name = "SpamChat",
+    CurrentValue = false,
+    Callback = function(Value)
+        if Value then startSpam() else spamToken = spamToken + 1 end
+    end
+})
+
+MiscTab:CreateInput({
+    Name = "SpamText",
+    CurrentValue = tostring(State.SpamText or ""),
+    PlaceholderText = "...",
+})
+
+MiscTab:CreateInput({
+    Name = "SpamDelay",
+    CurrentValue = tostring(State.SpamDelay),
+    PlaceholderText = "5",
+    Callback = function(Text)
+        local v = tonumber(Text)
+        if v then State.SpamDelay = math.clamp(v, 3, 60) end
+    end
+})
+end
+
+do
+-- ==================== FREECAM ====================
+-- ---------- Freecam ----------
+local freecam = { pos = nil, pitch = 0, yaw = 0, conn = nil, hrp = nil, anchored = false, rmb = false, lookTouch = nil }
+
+local function stopFreecam()
+    if freecam.conn then freecam.conn:Disconnect() freecam.conn = nil end
+    freecam.rmb, freecam.lookTouch = false, nil
+    pcall(function()
+        if freecam.hrp and freecam.hrp.Parent then freecam.hrp.Anchored = freecam.anchored end
+        freecam.hrp = nil
+        local cam = workspace.CurrentCamera
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if cam then
+            cam.CameraType = Enum.CameraType.Custom
+            if hum then cam.CameraSubject = hum end
+        end
+    end)
+end
+
+local function startFreecam()
+    stopFreecam()
+    local cam = workspace.CurrentCamera
+    if not cam then return end
+    local pitch, yaw = cam.CFrame:ToOrientation()
+    freecam.pitch, freecam.yaw, freecam.pos = pitch, yaw, cam.CFrame.Position
+    cam.CameraType = Enum.CameraType.Scriptable
+    freecam.conn = RunService.RenderStepped:Connect(function(dt)
+        if not Running or not State.Freecam then return end
+        pcall(function()
+            local c = workspace.CurrentCamera
+            if not c then return end
+            if c.CameraType ~= Enum.CameraType.Scriptable then c.CameraType = Enum.CameraType.Scriptable end
+
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp and hrp ~= freecam.hrp then
+                freecam.hrp = hrp
+                freecam.anchored = hrp.Anchored
+                hrp.Anchored = true
+            end
+
+            local speed = math.clamp(tonumber(State.FreecamSpeed) or 50, 1, 500)
+            local rot = CFrame.fromOrientation(freecam.pitch, freecam.yaw, 0)
+            local move = Vector3.zero
+
+            if hum and hum.MoveDirection.Magnitude > 0.01 then
+                local md = hum.MoveDirection
+                local look = rot.LookVector
+                local flat = Vector3.new(look.X, 0, look.Z)
+                if flat.Magnitude > 0.01 then
+                    flat = flat.Unit
+                    local right = flat:Cross(Vector3.new(0, 1, 0))
+                    move = look * md:Dot(flat) + rot.RightVector * md:Dot(right)
+                else
+                    move = md
+                end
+            end
+
+            if not UserInputService:GetFocusedTextBox() then
+                if UserInputService:IsKeyDown(Enum.KeyCode.E) then move = move + Vector3.new(0, 1, 0) end
+                if UserInputService:IsKeyDown(Enum.KeyCode.Q) then move = move - Vector3.new(0, 1, 0) end
+            end
+
+            freecam.pos = freecam.pos + move * speed * math.min(dt, 0.1)
+            c.CFrame = CFrame.new(freecam.pos) * rot
+            c.Focus = c.CFrame
+        end)
+    end)
+end
+
+table.insert(Connections, UserInputService.InputBegan:Connect(function(input, gp)
+    if not State.Freecam then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        freecam.rmb = true
+    elseif input.UserInputType == Enum.UserInputType.Touch and not gp and not freecam.lookTouch then
+        local cam = workspace.CurrentCamera
+        if cam and input.Position.X > cam.ViewportSize.X * 0.4 then freecam.lookTouch = input end
+    end
+end))
+
+table.insert(Connections, UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        freecam.rmb = false
+    elseif input == freecam.lookTouch then
+        freecam.lookTouch = nil
+    end
+end))
+
+table.insert(Connections, UserInputService.InputChanged:Connect(function(input)
+    if not State.Freecam then return end
+    local sens
+    if input.UserInputType == Enum.UserInputType.MouseMovement and freecam.rmb then
+        sens = 0.004
+    elseif input == freecam.lookTouch then
+        sens = 0.006
+    else
+        return
+    end
+    freecam.yaw = freecam.yaw - input.Delta.X * sens
+    freecam.pitch = math.clamp(freecam.pitch - input.Delta.Y * sens, -1.5, 1.5)
+end))
+
+MiscTab:CreateToggle({
+    Name = "Freecam",
+    CurrentValue = false,
+    Callback = function(Value)
+        if Value then startFreecam() else stopFreecam() end
+    end
+})
+
+MiscTab:CreateInput({
+    Name = "FreecamSpeed",
+    CurrentValue = tostring(State.FreecamSpeed),
+    PlaceholderText = "50",
+    Callback = function(Text)
+        local v = tonumber(Text)
+        if v then State.FreecamSpeed = math.clamp(v, 1, 500) end
+    end
+})
+
+table.insert(CleanupFns, function()
+    stopFreecam()
+end)
+end
 
 MiscTab:CreateInput({
     Name = "Gravity",
@@ -2668,6 +3289,29 @@ ServerTab:CreateButton({
     end
 })
 
+-- ==================== SERVER HOP NGẪU NHIÊN ====================
+-- ---------- Server Hop ngẫu nhiên ----------
+ServerTab:CreateButton({
+    Name = "HopRandom",
+    Callback = function()
+        task.spawn(function()
+            pcall(function()
+                local raw = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/0?sortOrder=Asc&limit=100")
+                local data = HttpService:JSONDecode(raw)
+                if data and data.data then
+                    local valid = {}
+                    for _, server in ipairs(data.data) do
+                        if server.id ~= game.JobId and server.playing < server.maxPlayers then table.insert(valid, server) end
+                    end
+                    if #valid > 0 then
+                        TeleportService:TeleportToPlaceInstance(game.PlaceId, valid[math.random(1, #valid)].id, LocalPlayer)
+                    end
+                end
+            end)
+        end)
+    end
+})
+
 local soundIdInput = ""
 MiscTab:CreateInput({
     Name = "SoundID",
@@ -2697,6 +3341,275 @@ MiscTab:CreateButton({
         end)
     end
 })
+
+do
+-- ==================== LƯU NHẠC (lưu riêng, không cần Auto Save) ====================
+local MUSIC_FILE = "KiyoHub_Music.json"
+local SavedMusic = {}
+local musicRows = {}
+local playingEntry, playingSound = nil, nil
+local musicContainer = nil
+
+local function saveMusicFile()
+    pcall(function()
+        if writefile then writefile(MUSIC_FILE, HttpService:JSONEncode(SavedMusic)) end
+    end)
+end
+
+local function loadMusicFile()
+    pcall(function()
+        if readfile and isfile and isfile(MUSIC_FILE) then
+            local ok, data = pcall(function() return HttpService:JSONDecode(readfile(MUSIC_FILE)) end)
+            if ok and type(data) == "table" then
+                for _, e in ipairs(data) do
+                    if type(e) == "table" and type(e.name) == "string" and e.id ~= nil then
+                        table.insert(SavedMusic, { name = e.name:sub(1, 40), id = tostring(e.id):match("%d+") or "" })
+                    end
+                end
+            end
+        end
+    end)
+end
+
+local function refreshMusicButtons()
+    for _, r in ipairs(musicRows) do
+        local playing = (playingEntry == r.entry)
+        r.reg.Key = playing and "MusicStop" or "MusicStart"
+        r.btn.Text = GetText(r.reg.Key)
+        r.btn.BackgroundColor3 = playing and Color3.fromRGB(180, 45, 45) or Color3.fromRGB(0, 120, 255)
+    end
+end
+
+local function stopMusic()
+    local s = CurrentSound
+    CurrentSound = nil
+    playingEntry, playingSound = nil, nil
+    if s then pcall(function() s:Stop() s:Destroy() end) end
+    refreshMusicButtons()
+end
+
+local function playMusic(entry)
+    stopMusic()
+    pcall(function()
+        local s = Instance.new("Sound")
+        s.SoundId = "rbxassetid://" .. entry.id
+        s.Volume = 2
+        s.Looped = true
+        s.Parent = game:GetService("SoundService")
+        CurrentSound = s
+        playingEntry, playingSound = entry, s
+        s.Destroying:Connect(function()
+            if playingSound == s then
+                playingEntry, playingSound = nil, nil
+                refreshMusicButtons()
+            end
+        end)
+        s:Play()
+    end)
+    refreshMusicButtons()
+end
+
+local function addMusicRow(entry)
+    if not musicContainer then return end
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, 30)
+    row.BackgroundColor3 = Color3.fromRGB(18, 23, 31)
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
+    local rs = Instance.new("UIStroke", row)
+    rs.Color = Color3.fromRGB(30, 36, 48)
+    rs.Thickness = 1
+
+    local nameLabel = Instance.new("TextLabel", row)
+    nameLabel.Size = UDim2.new(1, -100, 1, 0)
+    nameLabel.Position = UDim2.new(0, 8, 0, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = entry.name
+    nameLabel.TextColor3 = Color3.fromRGB(210, 220, 235)
+    nameLabel.Font = Enum.Font.Gotham
+    nameLabel.TextSize = 11
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+
+    local startBtn = Instance.new("TextButton", row)
+    startBtn.Size = UDim2.new(0, 56, 0, 20)
+    startBtn.Position = UDim2.new(1, -90, 0.5, -10)
+    startBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    startBtn.Text = GetText("MusicStart")
+    startBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    startBtn.Font = Enum.Font.GothamBold
+    startBtn.TextSize = 10
+    Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 5)
+
+    local delBtn = Instance.new("TextButton", row)
+    delBtn.Size = UDim2.new(0, 24, 0, 20)
+    delBtn.Position = UDim2.new(1, -30, 0.5, -10)
+    delBtn.BackgroundColor3 = Color3.fromRGB(60, 30, 35)
+    delBtn.Text = "X"
+    delBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    delBtn.Font = Enum.Font.GothamBold
+    delBtn.TextSize = 10
+    Instance.new("UICorner", delBtn).CornerRadius = UDim.new(0, 5)
+
+    local reg = { Type = "Button", Object = startBtn, Key = "MusicStart" }
+    table.insert(registeredUIElements, reg)
+    local rowData = { entry = entry, btn = startBtn, reg = reg, frame = row }
+    table.insert(musicRows, rowData)
+
+    startBtn.MouseButton1Click:Connect(function()
+        if playingEntry == entry then stopMusic() else playMusic(entry) end
+    end)
+
+    delBtn.MouseButton1Click:Connect(function()
+        if playingEntry == entry then stopMusic() end
+        for i, e in ipairs(SavedMusic) do
+            if e == entry then table.remove(SavedMusic, i) break end
+        end
+        for i, r in ipairs(musicRows) do
+            if r == rowData then table.remove(musicRows, i) break end
+        end
+        for i, r in ipairs(registeredUIElements) do
+            if r == reg then table.remove(registeredUIElements, i) break end
+        end
+        saveMusicFile()
+        row:Destroy()
+    end)
+
+    row.Parent = musicContainer
+    refreshMusicButtons()
+end
+
+-- GUI nhập tên + ID nhạc
+local MusicFrame = Instance.new("Frame", DropdownGui)
+MusicFrame.Name = "MusicSaveFrame"
+MusicFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MusicFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MusicFrame.Size = UDim2.new(0, 0, 0, 0)
+MusicFrame.BackgroundColor3 = Color3.fromRGB(14, 18, 25)
+MusicFrame.Visible = false
+MusicFrame.Active = true
+MusicFrame.Draggable = true
+MusicFrame.ClipsDescendants = true
+Instance.new("UICorner", MusicFrame).CornerRadius = UDim.new(0, 8)
+do
+    local ms = Instance.new("UIStroke", MusicFrame)
+    ms.Color = Color3.fromRGB(50, 60, 75)
+    ms.Thickness = 1.5
+end
+
+local MUSIC_FULL = UDim2.new(0, 230, 0, 150)
+
+local musicTitle = Instance.new("TextLabel", MusicFrame)
+musicTitle.Size = UDim2.new(1, -40, 0, 28)
+musicTitle.Position = UDim2.new(0, 10, 0, 0)
+musicTitle.BackgroundTransparency = 1
+musicTitle.Text = GetText("SaveMusicTitle")
+musicTitle.TextColor3 = Color3.fromRGB(210, 220, 235)
+musicTitle.Font = Enum.Font.GothamBold
+musicTitle.TextSize = 12
+musicTitle.TextXAlignment = Enum.TextXAlignment.Left
+table.insert(registeredUIElements, { Type = "Label", Object = musicTitle, Key = "SaveMusicTitle" })
+
+local musicClose = Instance.new("TextButton", MusicFrame)
+musicClose.Size = UDim2.new(0, 22, 0, 22)
+musicClose.Position = UDim2.new(1, -28, 0, 4)
+musicClose.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
+musicClose.Text = "X"
+musicClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+musicClose.Font = Enum.Font.GothamBold
+musicClose.TextSize = 10
+Instance.new("UICorner", musicClose).CornerRadius = UDim.new(0, 5)
+
+local function makeMusicBox(y, placeholderKey)
+    local box = Instance.new("TextBox", MusicFrame)
+    box.Size = UDim2.new(1, -20, 0, 28)
+    box.Position = UDim2.new(0, 10, 0, y)
+    box.BackgroundColor3 = Color3.fromRGB(24, 30, 40)
+    box.Text = ""
+    box.ClearTextOnFocus = false
+    box.PlaceholderText = GetText(placeholderKey)
+    box.PlaceholderColor3 = Color3.fromRGB(120, 130, 150)
+    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.Font = Enum.Font.Gotham
+    box.TextSize = 12
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 5)
+    table.insert(registeredUIElements, { Type = "Placeholder", Object = box, Key = placeholderKey })
+    return box
+end
+
+local musicNameBox = makeMusicBox(34, "MusicNamePH")
+local musicIdBox = makeMusicBox(68, "MusicIdPH")
+
+local musicConfirm = Instance.new("TextButton", MusicFrame)
+musicConfirm.Size = UDim2.new(1, -20, 0, 30)
+musicConfirm.Position = UDim2.new(0, 10, 0, 107)
+musicConfirm.BackgroundColor3 = Color3.fromRGB(35, 150, 80)
+musicConfirm.Text = "✓"
+musicConfirm.TextColor3 = Color3.fromRGB(255, 255, 255)
+musicConfirm.Font = Enum.Font.GothamBold
+musicConfirm.TextSize = 16
+Instance.new("UICorner", musicConfirm).CornerRadius = UDim.new(0, 6)
+
+local function showMusicGui(show)
+    if show then
+        MusicFrame.Size = UDim2.new(0, 0, 0, 0)
+        MusicFrame.Visible = true
+        TweenService:Create(MusicFrame, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Size = MUSIC_FULL }):Play()
+    else
+        TweenService:Create(MusicFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Size = UDim2.new(0, 0, 0, 0) }):Play()
+        task.delay(0.15, function() MusicFrame.Visible = false end)
+    end
+end
+
+local function flashBox(box)
+    pcall(function()
+        local old = box.BackgroundColor3
+        box.BackgroundColor3 = Color3.fromRGB(120, 35, 40)
+        task.delay(0.4, function() box.BackgroundColor3 = old end)
+    end)
+end
+
+musicClose.MouseButton1Click:Connect(function() showMusicGui(false) end)
+
+musicConfirm.MouseButton1Click:Connect(function()
+    local name = musicNameBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
+    local id = musicIdBox.Text:match("%d+")
+    local bad = false
+    if name == "" then flashBox(musicNameBox) bad = true end
+    if not id then flashBox(musicIdBox) bad = true end
+    if bad then return end
+    local entry = { name = name:sub(1, 40), id = id }
+    table.insert(SavedMusic, entry)
+    saveMusicFile()
+    addMusicRow(entry)
+    musicNameBox.Text, musicIdBox.Text = "", ""
+    showMusicGui(false)
+end)
+
+MiscTab:CreateButton({
+    Name = "SaveMusic",
+    Callback = function() showMusicGui(not MusicFrame.Visible) end
+})
+
+do
+    local miscScroll = nil
+    for _, t in pairs(Tabs) do
+        if t.NameKey == "Misc" then miscScroll = t.Scroll break end
+    end
+    if miscScroll then
+        musicContainer = Instance.new("Frame")
+        musicContainer.Name = "SavedMusicList"
+        musicContainer.Size = UDim2.new(1, -8, 0, 0)
+        musicContainer.AutomaticSize = Enum.AutomaticSize.Y
+        musicContainer.BackgroundTransparency = 1
+        local ml = Instance.new("UIListLayout", musicContainer)
+        ml.SortOrder = Enum.SortOrder.LayoutOrder
+        ml.Padding = UDim.new(0, 5)
+        musicContainer.Parent = miscScroll
+        loadMusicFile()
+        for _, entry in ipairs(SavedMusic) do addMusicRow(entry) end
+    end
+end
+end
 
 InfoTab:CreateSection("CreatorProfile")
 InfoTab:CreateButton({ Name = "Roblox Account: Khanglord20148", Callback = function() end })
@@ -3011,7 +3924,8 @@ table.insert(Connections, RunService.RenderStepped:Connect(function(delta)
                 if char and char:FindFirstChildOfClass("Humanoid") then
                     local animator = char.Humanoid:FindFirstChildOfClass("Animator")
                     if animator then
-                        for _, track in pairs(animator:GetPlayingAnimationTracks()) do if track.Speed ~= 40 then track:AdjustSpeed(40) end end
+                        local spd = math.clamp(tonumber(State.AnimSpeedValue) or 40, 0, 1000)
+                        for _, track in pairs(animator:GetPlayingAnimationTracks()) do if track.Speed ~= spd then track:AdjustSpeed(spd) end end
                     end
                 end
             end)
