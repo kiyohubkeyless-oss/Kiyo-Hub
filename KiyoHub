@@ -191,8 +191,10 @@ local Translations = {
         Freecam = "Freecam",
         FreecamSpeed = "Freecam Speed",
         FlySpeed = "Fly Speed",
-        SaveMusic = "Save Music",
-        SaveMusicTitle = "Save Music",
+        AnimPack = "Animation Pack (R15 only)",
+        DogMode = "Dog Mode",
+        SaveMusic = "Create Music",
+        SaveMusicTitle = "Create Music",
         MusicNamePH = "Song name",
         MusicIdPH = "Sound ID",
         MusicStart = "Start",
@@ -297,8 +299,10 @@ local Translations = {
         Freecam = "Camera Tự Do",
         FreecamSpeed = "Tốc Độ Camera Tự Do",
         FlySpeed = "Tốc Độ Bay",
-        SaveMusic = "Lưu Nhạc",
-        SaveMusicTitle = "Lưu Nhạc",
+        AnimPack = "Gói Animation (R15 only)",
+        DogMode = "Biến Thành Chó",
+        SaveMusic = "Tạo Nhạc",
+        SaveMusicTitle = "Tạo Nhạc",
         MusicNamePH = "Tên bài nhạc",
         MusicIdPH = "ID nhạc",
         MusicStart = "Bắt Đầu",
@@ -623,6 +627,8 @@ local State = {
     Freecam = false,
     FreecamSpeed = 50,
     FlySpeed = 65,
+    AnimPack = "Default",
+    DogMode = false,
     SpamChat = false,
     SpamText = "",
     SpamDelay = 5,
@@ -2773,6 +2779,307 @@ table.insert(CleanupFns, function()
 end)
 end
 
+-- ==================== BIẾN THÀNH CHÓ (R15 + R6) ====================
+do
+    local V, T = Vector3.new, CFrame.new
+    local function Rx(a) return CFrame.Angles(a, 0, 0) end
+    local function Ry(a) return CFrame.Angles(0, a, 0) end
+    local function Rz(a) return CFrame.Angles(0, 0, a) end
+    local sin, abs, clamp = math.sin, math.abs, math.clamp
+
+    local COL = {
+        fur   = Color3.fromRGB(206, 150, 82),
+        fur2  = Color3.fromRGB(176, 120, 62),
+        dark  = Color3.fromRGB(128, 84, 46),
+        light = Color3.fromRGB(240, 210, 158),
+        nose  = Color3.fromRGB(24, 22, 22),
+        eye   = Color3.fromRGB(34, 22, 16),
+        pink  = Color3.fromRGB(226, 118, 134),
+        white = Color3.fromRGB(255, 255, 255),
+    }
+
+    local dog = nil
+    local hidden = {}
+    local hideConn = nil
+    local barkT, lastBark = -1, 0
+    local phase, moveAlpha = 0, 0
+    local A = { pitch = 0, yaw = 0, jaw = 0, earBack = 0, earFlap = 0, wag = {0, 0, 0}, leg = {0, 0, 0, 0}, bob = 0 }
+
+    local function hideObj(d)
+        if dog and d:IsDescendantOf(dog.folder) then return end
+        if d:IsA("BasePart") then
+            if d.Name == "HumanoidRootPart" or d:FindFirstAncestorOfClass("Tool") then return end
+            if hidden[d] == nil then hidden[d] = d.Transparency end
+            d.Transparency = 1
+        elseif d:IsA("Decal") or d:IsA("Texture") then
+            if hidden[d] == nil then hidden[d] = d.Transparency end
+            d.Transparency = 1
+        end
+    end
+
+    local function destroyDog()
+        if hideConn then hideConn:Disconnect() hideConn = nil end
+        if dog then pcall(function() dog.folder:Destroy() end) dog = nil end
+        for d, tr in pairs(hidden) do
+            if d.Parent then pcall(function() d.Transparency = tr end) end
+        end
+        hidden = {}
+        barkT = -1
+    end
+
+    local function buildDog(char)
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not (hrp and hum) then return nil end
+
+        -- khoảng cách từ tâm HumanoidRootPart xuống mặt đất (R15 và R6 khác nhau)
+        local groundOffset
+        if hum.RigType == Enum.HumanoidRigType.R15 then
+            groundOffset = hum.HipHeight + hrp.Size.Y / 2
+        else
+            local torso, leg = char:FindFirstChild("Torso"), char:FindFirstChild("Left Leg")
+            groundOffset = (torso and torso.Size.Y / 2 or 1) + (leg and leg.Size.Y or 2)
+        end
+
+        local folder = Instance.new("Folder")
+        folder.Name = "KiyoDog"
+
+        local root = Instance.new("Part")
+        root.Name = "DogRoot"
+        root.Size = V(0.2, 0.2, 0.2)
+        root.Transparency = 1
+        root.CanCollide, root.CanQuery, root.CanTouch, root.Massless = false, false, false, true
+        root.Parent = folder
+        local rootWeld = Instance.new("Weld")
+        rootWeld.Part0, rootWeld.Part1 = hrp, root
+        rootWeld.C0 = T(0, -groundOffset, 0)
+        rootWeld.Parent = root
+
+        local pieces = {}
+
+        local function ell(name, size, color, material)
+            local p = Instance.new("Part")
+            p.Name = name
+            p.Size = size
+            p.Color = color
+            p.Material = material or Enum.Material.Fabric
+            p.CanCollide, p.CanQuery, p.CanTouch, p.Massless = false, false, false, true
+            p.TopSurface, p.BottomSurface = Enum.SurfaceType.Smooth, Enum.SurfaceType.Smooth
+            local m = Instance.new("SpecialMesh")
+            m.MeshType = Enum.MeshType.Sphere
+            m.Parent = p
+            p.Parent = folder
+            return p
+        end
+
+        local function attach(p, cf)
+            local w = Instance.new("Weld")
+            w.Part0, w.Part1 = root, p
+            if typeof(cf) == "function" then
+                pieces[#pieces + 1] = { w = w, f = cf }
+                w.C0 = cf()
+            else
+                w.C0 = cf
+            end
+            w.Parent = p
+        end
+
+        local function static(name, size, color, pos)
+            attach(ell(name, size, color), T(pos))
+        end
+
+        -- ===== Thân =====
+        static("Body",   V(1.55, 1.5, 3.3),  COL.fur,   V(0, 1.95, 0.35))
+        static("Belly",  V(1.2, 0.8, 2.4),   COL.light, V(0, 1.45, 0.35))
+        static("Chest",  V(1.15, 1.25, 0.9), COL.light, V(0, 1.85, -1.2))
+        static("Saddle", V(1.25, 0.55, 2.1), COL.fur2,  V(0, 2.55, 0.45))
+        static("Rump",   V(1.45, 1.4, 1.2),  COL.fur,   V(0, 1.9, 1.65))
+
+        -- ===== Đầu (xoay quanh khớp cổ HP) =====
+        local HP = V(0, 2.6, -1.5)
+        local function headPart(name, size, color, off, rot)
+            local p = ell(name, size, color)
+            local localCF = T(off) * (rot or CFrame.new())
+            attach(p, function() return T(HP) * Rx(A.pitch) * Ry(A.yaw) * localCF end)
+        end
+
+        headPart("Neck",   V(1.0, 1.2, 1.1),   COL.fur,   V(0, 0.15, -0.1))
+        headPart("Skull",  V(1.2, 1.1, 1.2),   COL.fur,   V(0, 0.7, -0.7))
+        headPart("Muzzle", V(0.66, 0.52, 1.0), COL.light, V(0, 0.5, -1.35))
+        headPart("Nose",   V(0.32, 0.26, 0.28), COL.nose, V(0, 0.68, -1.85))
+        for _, sx in ipairs({-1, 1}) do
+            headPart("Eye",       V(0.2, 0.24, 0.14),  COL.eye,   V(sx * 0.32, 0.88, -1.15))
+            headPart("EyeShine",  V(0.08, 0.08, 0.06), COL.white, V(sx * 0.29, 0.95, -1.21))
+            headPart("EyeBrow",   V(0.3, 0.12, 0.2),   COL.fur2,  V(sx * 0.32, 1.06, -1.05))
+            headPart("Cheek",     V(0.4, 0.4, 0.5),    COL.fur,   V(sx * 0.4, 0.45, -1.0))
+        end
+
+        -- hàm dưới, mở ra khi sủa
+        local J = V(0, 0.35, -1.05)
+        local function jawPart(name, size, color, off)
+            local p = ell(name, size, color)
+            attach(p, function() return T(HP) * Rx(A.pitch) * Ry(A.yaw) * T(J) * Rx(-A.jaw) * T(off) end)
+        end
+        jawPart("Jaw",    V(0.5, 0.16, 0.85), COL.light, V(0, -0.1, -0.4))
+        jawPart("Tongue", V(0.3, 0.07, 0.55), COL.pink,  V(0, -0.03, -0.42))
+
+        -- tai cụp, đung đưa khi chạy
+        for _, sx in ipairs({-1, 1}) do
+            local E = V(sx * 0.5, 1.12, -0.6)
+            local p = ell("Ear", V(0.16, 0.9, 0.55), COL.dark)
+            attach(p, function()
+                return T(HP) * Rx(A.pitch) * Ry(A.yaw) * T(E)
+                    * Rz(sx * (0.25 + A.earFlap)) * Rx(-A.earBack) * T(sx * 0.1, -0.4, 0)
+            end)
+        end
+
+        -- ===== 4 chân =====
+        local legDefs = {
+            { P = V(-0.5, 1.45, -0.85), back = false },
+            { P = V(0.5, 1.45, -0.85),  back = false },
+            { P = V(-0.5, 1.45, 1.5),   back = true },
+            { P = V(0.5, 1.45, 1.5),    back = true },
+        }
+        for i, def in ipairs(legDefs) do
+            local thighSize = def.back and V(0.7, 1.05, 0.95) or V(0.55, 0.9, 0.6)
+            local thighOff  = def.back and V(0, -0.3, 0.1) or V(0, -0.3, 0)
+            local parts = {
+                { ell("Thigh", thighSize, COL.fur),                thighOff },
+                { ell("Shin",  V(0.34, 0.7, 0.34), COL.fur2),      V(0, -0.88, def.back and 0.1 or 0) },
+                { ell("Paw",   V(0.5, 0.3, 0.72), COL.light),      V(0, -1.3, -0.1) },
+            }
+            for _, pr in ipairs(parts) do
+                local off = pr[2]
+                attach(pr[1], function() return T(def.P) * Rx(A.leg[i]) * T(off) end)
+            end
+        end
+
+        -- ===== Đuôi (3 đốt, vẫy liên tục) =====
+        local TP = V(0, 2.45, 1.95)
+        local function tailFrame(n)
+            local F = T(TP) * Ry(A.wag[1]) * Rx(-0.85)
+            if n == 1 then return F end
+            F = F * T(0, 0, 0.85) * Ry(A.wag[2]) * Rx(-0.3)
+            if n == 2 then return F end
+            return F * T(0, 0, 0.75) * Ry(A.wag[3]) * Rx(-0.25)
+        end
+        attach(ell("Tail1", V(0.3, 0.3, 0.85), COL.fur),   function() return tailFrame(1) * T(0, 0, 0.42) end)
+        attach(ell("Tail2", V(0.27, 0.27, 0.75), COL.fur), function() return tailFrame(2) * T(0, 0, 0.37) end)
+        attach(ell("Tail3", V(0.3, 0.3, 0.55), COL.light), function() return tailFrame(3) * T(0, 0, 0.27) end)
+
+        -- tiếng sủa
+        local sound = Instance.new("Sound")
+        sound.Name = "Bark"
+        sound.SoundId = "rbxassetid://4601957187"
+        sound.Volume = 3
+        sound.RollOffMaxDistance = 120
+        sound.Parent = root
+
+        return { folder = folder, hrp = hrp, hum = hum, root = root, rootWeld = rootWeld,
+                 pieces = pieces, groundOffset = groundOffset, sound = sound }
+    end
+
+    local function enableDog()
+        destroyDog()
+        local char = LocalPlayer.Character
+        if not char then return end
+        local d = buildDog(char)
+        if not d then return end
+        dog = d
+        d.folder.Parent = char
+        for _, x in ipairs(char:GetDescendants()) do hideObj(x) end
+        hideConn = char.DescendantAdded:Connect(function(x) pcall(hideObj, x) end)
+    end
+
+    -- hoạt ảnh: chạy chân chéo, nhún thân, vẫy đuôi, tai bay, đầu nhìn quanh, há mồm khi sủa
+    table.insert(Connections, RunService.RenderStepped:Connect(function(dt)
+        local d = dog
+        if not d then return end
+        if not (d.hrp and d.hrp.Parent and d.folder.Parent) then return end
+        pcall(function()
+            local t = os.clock()
+            local v = d.hrp.AssemblyLinearVelocity
+            local spd = Vector3.new(v.X, 0, v.Z).Magnitude
+            local grounded = d.hum.FloorMaterial ~= Enum.Material.Air
+            local target = grounded and clamp(spd / 16, 0, 1.5) or 0.3
+            moveAlpha = moveAlpha + (target - moveAlpha) * (1 - math.exp(-dt * 8))
+            local m = clamp(moveAlpha, 0, 1)
+            phase = phase + dt * clamp(spd, 0, 40) * 0.65
+
+            local amp = 0.75 * m
+            A.leg[1] = amp * sin(phase)
+            A.leg[4] = amp * sin(phase)
+            A.leg[2] = amp * sin(phase + math.pi)
+            A.leg[3] = amp * sin(phase + math.pi)
+            A.bob = 0.07 * abs(sin(phase)) * m
+
+            local wagSpeed = 11 + 4 * (1 - m)
+            local wagAmp = 0.5 - 0.15 * m
+            A.wag[1] = sin(t * wagSpeed) * wagAmp
+            A.wag[2] = sin(t * wagSpeed - 0.8) * wagAmp * 0.9
+            A.wag[3] = sin(t * wagSpeed - 1.6) * wagAmp * 0.8
+
+            A.earBack = clamp(moveAlpha, 0, 1.5) * 0.4
+            A.earFlap = sin(phase * 2) * 0.08 * m
+
+            local pitch = sin(phase * 2) * 0.04 * m
+            local yaw = sin(t * 0.6) * 0.14 * (1 - m)
+            local jaw = 0.06 + 0.04 * sin(t * 2) * (1 - m) -- thở nhẹ khi đứng yên
+
+            if barkT >= 0 then
+                barkT = barkT + dt
+                local k = barkT / 0.35
+                if k >= 1 then
+                    barkT = -1
+                else
+                    local s = sin(k * math.pi)
+                    jaw = jaw + s * 0.55
+                    pitch = pitch + s * 0.25
+                end
+            end
+            A.pitch, A.yaw, A.jaw = pitch, yaw, jaw
+
+            d.rootWeld.C0 = T(0, -d.groundOffset + A.bob, 0)
+            local pcs = d.pieces
+            for i = 1, #pcs do
+                local pc = pcs[i]
+                pc.w.C0 = pc.f()
+            end
+        end)
+    end))
+
+    table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function(char)
+        if not State.DogMode then return end
+        task.spawn(function()
+            char:WaitForChild("HumanoidRootPart", 5)
+            task.wait(0.4)
+            if State.DogMode and Running and LocalPlayer.Character == char then enableDog() end
+        end)
+    end))
+
+    local SubDogBtn = createSubButton("SubDogBtn", "BARK", UDim2.new(0.78, 0, 0.48, 0))
+    SubDogBtn.MouseButton1Click:Connect(function()
+        if not dog or os.clock() - lastBark < 0.35 then return end
+        lastBark = os.clock()
+        barkT = 0
+        pcall(function()
+            dog.sound.TimePosition = 0
+            dog.sound:Play()
+        end)
+    end)
+
+    VisualTab:CreateToggle({
+        Name = "DogMode",
+        CurrentValue = State.DogMode,
+        Callback = function(Value)
+            SubDogBtn.Visible = Value
+            if Value then enableDog() else destroyDog() end
+        end
+    })
+
+    table.insert(CleanupFns, destroyDog)
+end
+
 TeleportTab:CreateToggle({
     Name = "ClickTP",
     CurrentValue = State.ClickTP,
@@ -2968,6 +3275,178 @@ MiscTab:CreateInput({
         if v then State.AnimSpeedValue = math.clamp(v, 0, 1000) end
     end
 })
+
+-- ==================== GÓI ANIMATION R15 (thay animation đi/chạy/nhảy...) ====================
+do
+    local AnimPacks = {
+        ["Ninja"]       = { idle1 = 656117400,  idle2 = 656118341,  walk = 656121766,  run = 656118852,  jump = 656117878,  fall = 656115606,  climb = 656114359 },
+        ["Superhero"]   = { idle1 = 616111295,  idle2 = 616113536,  walk = 616122287,  run = 616117076,  jump = 616115533,  fall = 616108001,  climb = 616104706 },
+        ["Robot"]       = { idle1 = 616088211,  idle2 = 616089559,  walk = 616095330,  run = 616091570,  jump = 616090535,  fall = 616087089,  climb = 616086039 },
+        ["Zombie"]      = { idle1 = 616158929,  idle2 = 616160636,  walk = 616168032,  run = 616163682,  jump = 616161997,  fall = 616157476,  climb = 616156119 },
+        ["Levitation"]  = { idle1 = 616006778,  idle2 = 616008087,  walk = 616013216,  run = 616010382,  jump = 616008936,  fall = 616005863,  climb = 616003713 },
+        ["Cartoony"]    = { idle1 = 742637544,  idle2 = 742638445,  walk = 742640026,  run = 742638842,  jump = 742637942,  fall = 742637151,  climb = 742636889 },
+        ["Mage"]        = { idle1 = 707742142,  idle2 = 707855907,  walk = 707897309,  run = 707861613,  jump = 707853694,  fall = 707829716,  climb = 707826056 },
+        ["Toy"]         = { idle1 = 782841498,  idle2 = 782845736,  walk = 782843345,  run = 782842708,  jump = 782847020,  fall = 782846423,  climb = 782843869 },
+        ["Werewolf"]    = { idle1 = 1083195517, idle2 = 1083214717, walk = 1083178339, run = 1083216690, jump = 1083218792, fall = 1083189019, climb = 1083182000 },
+        ["Vampire"]     = { idle1 = 1083445855, idle2 = 1083450166, walk = 1083473930, run = 1083462077, jump = 1083455352, fall = 1083443587, climb = 1083439238 },
+        ["Elder"]       = { idle1 = 845397899,  idle2 = 845400520,  walk = 845403856,  run = 845386501,  jump = 845398858,  fall = 845396048,  climb = 845392038 },
+        ["Knight"]      = { idle1 = 657595757,  idle2 = 657568135,  walk = 657552124,  run = 657564596,  jump = 658409194,  fall = 657600338,  climb = 658360781 },
+        ["Stylish"]     = { idle1 = 616136790,  idle2 = 616138447,  walk = 616146177,  run = 616140816,  jump = 616139451,  fall = 616134815,  climb = 616133594 },
+        ["Astronaut"]   = { idle1 = 891621366,  idle2 = 891633237,  walk = 891667138,  run = 891636393,  jump = 891627522,  fall = 891617961,  climb = 891609353 },
+        ["Pirate"]      = { idle1 = 750781874,  idle2 = 750782770,  walk = 750785693,  run = 750783738,  jump = 750782230,  fall = 750780242,  climb = 750779899 },
+        ["Bubbly"]      = { idle1 = 910004836,  idle2 = 910009958,  walk = 910034870,  run = 910025107,  jump = 910016857,  fall = 910001910,  climb = 909997997 },
+    }
+    local PackOrder = {
+        "Default", "Ninja", "Superhero", "Robot", "Zombie",
+        "Levitation", "Cartoony", "Mage", "Toy", "Werewolf",
+        "Vampire", "Elder", "Knight", "Stylish", "Astronaut",
+        "Pirate", "Bubbly",
+    }
+
+    State.AnimPack = (tostring(State.AnimPack or "Default"):gsub(" %(R15 only%)", ""))
+
+    local origIds = setmetatable({}, { __mode = "k" }) -- ID gốc của từng slot, để trả về Default
+    local validCache = {}                               -- [id] = true/false (đã kiểm tra tải được chưa)
+    local applyToken = 0
+
+    local function notify(text)
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", { Title = "Kiyo Hub", Text = text, Duration = 5 })
+        end)
+    end
+
+    local function getSlots(animate)
+        local function slot(folder, name)
+            local f = animate:FindFirstChild(folder)
+            return f and f:FindFirstChild(name)
+        end
+        return {
+            idle1 = slot("idle", "Animation1"), idle2 = slot("idle", "Animation2"),
+            walk = slot("walk", "WalkAnim"), run = slot("run", "RunAnim"),
+            jump = slot("jump", "JumpAnim"), fall = slot("fall", "FallAnim"),
+            climb = slot("climb", "ClimbAnim"),
+        }
+    end
+
+    -- kiểm tra ID có tải được thật không (tránh ID sai làm nhân vật đứng đơ)
+    local function animLoads(animator, id)
+        local ok, good = pcall(function()
+            local a = Instance.new("Animation")
+            a.AnimationId = "rbxassetid://" .. id
+            local track = animator:LoadAnimation(a)
+            local t0 = os.clock()
+            while track.Length <= 0 and os.clock() - t0 < 4 do task.wait(0.1) end
+            local result = track.Length > 0
+            pcall(function() track:Destroy() end)
+            a:Destroy()
+            return result
+        end)
+        return ok and good
+    end
+
+    local function reloadAnimate(hum, animate)
+        animate.Disabled = true
+        local animator = hum:FindFirstChildOfClass("Animator")
+        if animator then
+            for _, tr in ipairs(animator:GetPlayingAnimationTracks()) do pcall(function() tr:Stop(0) end) end
+        end
+        task.wait()
+        animate.Disabled = false
+    end
+
+    local function applyPack(packName)
+        applyToken = applyToken + 1
+        local myToken = applyToken
+        task.spawn(function()
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if not hum then return end
+            local animate = char:FindFirstChild("Animate") or char:WaitForChild("Animate", 5)
+            if not animate then
+                if packName ~= "Default" then notify("Game này không có script Animate, không đổi animation được.") end
+                return
+            end
+            local pack = AnimPacks[packName]
+            if pack and hum.RigType ~= Enum.HumanoidRigType.R15 then
+                notify("Gói animation này chỉ dùng được cho R15.")
+                return
+            end
+
+            local slots = getSlots(animate)
+            local changed = false
+
+            -- trả mọi slot về ID gốc trước khi áp gói mới
+            for _, slot in pairs(slots) do
+                if origIds[slot] then
+                    slot.AnimationId = origIds[slot]
+                    origIds[slot] = nil
+                    changed = true
+                end
+            end
+
+            local failed = 0
+            if pack then
+                local animator = hum:FindFirstChildOfClass("Animator") or hum:WaitForChild("Animator", 3)
+                if animator then
+                    local pending = 0
+                    for key, id in pairs(pack) do
+                        if slots[key] and validCache[id] == nil then
+                            pending = pending + 1
+                            task.spawn(function()
+                                validCache[id] = animLoads(animator, id)
+                                pending = pending - 1
+                            end)
+                        end
+                    end
+                    local t0 = os.clock()
+                    while pending > 0 and os.clock() - t0 < 6 do task.wait(0.1) end
+                end
+                if myToken ~= applyToken then return end -- người dùng đã chọn gói khác
+                for key, id in pairs(pack) do
+                    local slot = slots[key]
+                    if slot then
+                        if validCache[id] then
+                            if origIds[slot] == nil then origIds[slot] = slot.AnimationId end
+                            slot.AnimationId = "rbxassetid://" .. id
+                            changed = true
+                        else
+                            failed = failed + 1
+                        end
+                    end
+                end
+            end
+
+            if myToken ~= applyToken then return end
+            if changed then reloadAnimate(hum, animate) end
+            if failed > 0 then
+                notify(failed .. " animation không tải được, những cái đó giữ nguyên mặc định.")
+            end
+        end)
+    end
+
+    table.insert(Connections, LocalPlayer.CharacterAdded:Connect(function()
+        if State.AnimPack and State.AnimPack ~= "Default" then
+            task.wait(0.6)
+            if Running then applyPack(State.AnimPack) end
+        end
+    end))
+
+    MiscTab:CreateDropdown({
+        Name = "AnimPack",
+        Options = PackOrder,
+        CurrentOption = State.AnimPack or "Default",
+        Callback = function(Option)
+            State.AnimPack = tostring(Option)
+            applyPack(State.AnimPack)
+        end
+    })
+
+    if State.AnimPack and State.AnimPack ~= "Default" and AnimPacks[State.AnimPack] then
+        applyPack(State.AnimPack)
+    end
+
+    table.insert(CleanupFns, function() applyPack("Default") end)
+end
 
 MiscTab:CreateToggle({
     Name = "Hitbox",
